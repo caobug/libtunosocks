@@ -584,7 +584,7 @@
  * ICMP_TTL: Default value for Time-To-Live used by ICMP packets.
  */
 #ifndef ICMP_TTL
-#define ICMP_TTL                       (IP_DEFAULT_TTL)
+#define ICMP_TTL                       64
 #endif
 
 /**

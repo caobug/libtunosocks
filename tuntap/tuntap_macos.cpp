@@ -70,4 +70,6 @@ bool TuntapMacOS::Open()
 bool TuntapMacOS::Close()
 {
 
+    close(this->GetTunHandle());
+    return true;
 }

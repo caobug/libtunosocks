@@ -56,7 +56,12 @@ void Socksifier::AsyncRun()
 
 void Socksifier::Stop()
 {
-	tun_socket_.cancel();
+	boost::system::error_code ec;
+
+	tun_socket_.cancel(ec);
+#ifdef __APPLE__
+	tun_socket_.close(ec);
+#endif
 	TuntapDevice::GetInstance()->Close();
 }
 
@@ -67,6 +72,14 @@ bool Socksifier::Restart()
 		std::cout << "Run failed, exiting\n";
 		return false;
 	}
+#ifndef _WIN32
+	boost::system::error_code ec;
+	tun_socket_.assign(TuntapDevice::GetInstance()->GetTunHandle(), ec);
+	if (ec) {
+		std::cout << "err assigning native handle to stream descriptor\n";
+		return false;
+	}
+#endif
 	TUN_RECV_COROUTINE
 	return true;
 }

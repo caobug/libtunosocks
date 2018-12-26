@@ -11,16 +11,16 @@ int main()
         Socksifier::GetInstance()->AsyncRun();
 
 //        sleep(3);
-//
+////
 //        Socksifier::GetInstance()->Stop();
-//
+////
 //        sleep(3);
-//
+////
 //        Socksifier::GetInstance()->Restart();
 
     }
 
-    getchar();
+    sleep(2222);
 
 }
 

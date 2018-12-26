@@ -4,13 +4,35 @@
 #include <lwip/netif.h>
 #include <lwip/ip.h>
 
+#include <lwip/pbuf.h>
+#include "../tuntap/tuntaphelper.h"
+
+
 err_t netif_output_func(struct netif *netif, struct pbuf *p, const ip4_addr_t *ipaddr) {
+
+
+    struct pbuf *packet_with_tun_header = pbuf_alloc(PBUF_IP, p->len + 4, PBUF_RAM);
+    if (!packet_with_tun_header) {
+        printf("pbuf_alloc err\n");
+        return ERR_BUF;
+    }
+
+    if (ERR_OK != pbuf_take_at(packet_with_tun_header, p->payload, p->len, 4)) {
+        return ERR_BUF;
+    }
+
+    ((uint32_t*)packet_with_tun_header->payload)[0] = 2;
+
+    assert(packet_with_tun_header->len == packet_with_tun_header->tot_len);
+
+    TuntapHelper::GetInstance()->Inject(packet_with_tun_header);
+
 
     return ERR_OK;
 
 }
-err_t netif_input_func(struct pbuf *p, struct netif *inp) {
-
+err_t netif_input_func(struct pbuf *p, struct netif *inp)
+{
     return ip_input(p, inp);
 }
 

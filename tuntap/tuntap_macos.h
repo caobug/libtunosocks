@@ -14,9 +14,6 @@ public:
 
     virtual bool Close();
 
-private:
-
-    bool need_restart = false;
 
 };
 

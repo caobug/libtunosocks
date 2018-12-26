@@ -315,40 +315,9 @@ tcp_input(struct pbuf *p, struct netif *inp)
     /* Finally, if we still did not get a match, we check all PCBs that
        are LISTENing for incoming connections. */
     prev = NULL;
-    for (lpcb = tcp_listen_pcbs.listen_pcbs; lpcb != NULL; lpcb = lpcb->next) {
-      /* check if PCB is bound to specific netif */
-      if ((lpcb->netif_idx != NETIF_NO_INDEX) &&
-          (lpcb->netif_idx != netif_get_index(ip_data.current_input_netif))) {
-        prev = (struct tcp_pcb *)lpcb;
-        continue;
-      }
+    lpcb = tcp_listen_pcbs.listen_pcbs;
+    prev = (struct tcp_pcb *)lpcb;
 
-      if (lpcb->local_port == tcphdr->dest) {
-        if (IP_IS_ANY_TYPE_VAL(lpcb->local_ip)) {
-          /* found an ANY TYPE (IPv4/IPv6) match */
-#if SO_REUSE
-          lpcb_any = lpcb;
-          lpcb_prev = prev;
-#else /* SO_REUSE */
-          break;
-#endif /* SO_REUSE */
-        } else if (IP_ADDR_PCB_VERSION_MATCH_EXACT(lpcb, ip_current_dest_addr())) {
-          if (ip_addr_cmp(&lpcb->local_ip, ip_current_dest_addr())) {
-            /* found an exact match */
-            break;
-          } else if (ip_addr_isany(&lpcb->local_ip)) {
-            /* found an ANY-match */
-#if SO_REUSE
-            lpcb_any = lpcb;
-            lpcb_prev = prev;
-#else /* SO_REUSE */
-            break;
-#endif /* SO_REUSE */
-          }
-        }
-      }
-      prev = (struct tcp_pcb *)lpcb;
-    }
 #if SO_REUSE
     /* first try specific local IP */
     if (lpcb == NULL) {
@@ -675,7 +644,9 @@ tcp_listen_input(struct tcp_pcb_listen *pcb)
     /* Set up the new PCB. */
     ip_addr_copy(npcb->local_ip, *ip_current_dest_addr());
     ip_addr_copy(npcb->remote_ip, *ip_current_src_addr());
-    npcb->local_port = pcb->local_port;
+    //modify
+      //npcb->local_port = pcb->local_port
+    npcb->local_port = tcphdr->dest;
     npcb->remote_port = tcphdr->src;
     npcb->state = SYN_RCVD;
     npcb->rcv_nxt = seqno + 1;

@@ -151,6 +151,9 @@ ip4_route_src(const ip4_addr_t *src, const ip4_addr_t *dest)
 struct netif *
 ip4_route(const ip4_addr_t *dest)
 {
+
+    return netif_default;
+
 #if !LWIP_SINGLE_NETIF
   struct netif *netif;
 
