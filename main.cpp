@@ -1,10 +1,11 @@
 #include "net/socksifier.h"
-
+#include "utils/logger.h"
 #include "tuntap/tuntapinstaller.h"
 
 
 int main()
 {
+	Logger::GetInstance()->InitLog();
 	//TuntapInstaller::GetInstance()->Uninstall();
 
 	//TuntapInstaller::GetInstance()->Install();

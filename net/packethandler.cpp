@@ -26,27 +26,9 @@ void PacketHandler::Input(void* packet, uint64_t size)
 		return;
 	}
 
-	switch (IPH_PROTO(ip_header))
-	{
-		case PROTO_TCP:
-		{
-			break;
-		}
-		case PROTO_UDP:
-		{
-			break;
-		}
-
-		case PROTO_ICMP:
-		{
-			break;
-		}
-
-		default:
-			return;
-	}
-
-
+	if (IPH_PROTO(ip_header) != PROTO_TCP
+		&& IPH_PROTO(ip_header) != PROTO_UDP
+		&& IPH_PROTO(ip_header) != PROTO_ICMP) return;
 
 #if defined(__APPLE__) || defined(__linux__)
     struct pbuf *p = pbuf_alloc(PBUF_IP, size - 4, PBUF_RAM);
@@ -72,6 +54,6 @@ void PacketHandler::Input(void* packet, uint64_t size)
 
     netif.input(p, &netif);
 
-    printf("read %zu bytes\n",size);
+    //printf("read %zu bytes\n",size);
 
 }

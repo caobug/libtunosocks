@@ -14,6 +14,8 @@ set(CMAKE_STATIC_LINKER_FLAGS "/machine:X64" CACHE STRING "x64" FORCE)
 set(CMAKE_SHARED_LINKER_FLAGS "/machine:X64" CACHE STRING "x64" FORCE)
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Debug;Release" FORCE)
 include_directories("C:/Boost/include/boost-1_68")
+include_directories("C:/Users/mario/Documents/spdlog-1.2.1/include")
+
 link_directories("C:/Boost/lib")
 
 endif()
@@ -43,25 +45,21 @@ file(GLOB_RECURSE LWIP_CORE "${CMAKE_CURRENT_SOURCE_DIR}/lwip/core/*.*")
 file(GLOB_RECURSE LWIP_NETIF "${CMAKE_CURRENT_SOURCE_DIR}/lwip/netif/*.*")
 file(GLOB_RECURSE LWIP_PLATFORM "${CMAKE_CURRENT_SOURCE_DIR}/lwip/platform/*.*")
 
+file(GLOB_RECURSE NET "${CMAKE_CURRENT_SOURCE_DIR}/net/*.*")
+file(GLOB_RECURSE TUNTAP "${CMAKE_CURRENT_SOURCE_DIR}/tuntap/*.*")
+file(GLOB_RECURSE UTILS "${CMAKE_CURRENT_SOURCE_DIR}/utils/*.*")
+
 include_directories(lwip/include)
 
 my_add_executable(libtun2socks
         
 		main.cpp
-        net/socksifier.cpp
-        net/packethandler.cpp
-        net/lwiphelper.cpp
-        net/lwiphelper.h
-        net/lwip_callback.h
-        net/lwip_tcp_callback.h
-		net/lwip_icmp_callback.h
-		net/tcp/tcp_session.h
-		tuntap/tuntaphelper.cpp
-		tuntap/tuntaphelper.h
-		tuntap/tuntap_windows.cpp
 		${LWIP_CORE}
 		${LWIP_NETIF}
 		${LWIP_PLATFORM}
+		${NET}
+		${TUNTAP}
+		${UTILS}
 		)
 		
 add_definitions(-DBOOST_COROUTINES_NO_DEPRECATION_WARNING)

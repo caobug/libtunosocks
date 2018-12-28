@@ -18,16 +18,30 @@ public:
 		boost::thread t1(boost::bind(&boost::asio::io_context::run, &this->io_context));
 	}
 
-	void Handle(tcp_pcb *pcb)
+	bool Handle(tcp_pcb *pcb, pbuf* p)
 	{
 		auto res = session_map.find(*pcb);
 
-		assert(res == session_map.end());
+		// new session
+		if (res == session_map.end())
+		{
+			auto new_session = boost::make_shared<TcpSession>(pcb, session_map, io_context);
+			session_map.insert(std::make_pair(*pcb, new_session));
+			new_session->EnqueuePacket(p);
+			new_session->Start();
+			return true;
+		}
 
-		auto new_session = boost::make_shared<TcpSession>(pcb, session_map, io_context);
-		session_map.insert(std::make_pair(*pcb, new_session));
+		// old session
+		if (res->second->GetSeesionStatus() == CLOSED)
+		{
+			LOG_DEBUG("session closed")
+			return false;
+		}
 
-		new_session->Run();
+		res->second->ProxyTcpPacket(p);
+		
+		return true;
 	}
 
 

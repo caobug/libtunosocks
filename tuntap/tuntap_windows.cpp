@@ -1,3 +1,4 @@
+#ifdef _WIN32
 #include "tuntap_windows.h"
 #include "tap-windows.h"
 #include <string>
@@ -24,7 +25,7 @@ std::string TuntapWindows::GetTunDeviceID()
 		if (res != ERROR_SUCCESS) {
 			break;
 		}
-		printf("%s\n", subKeyName);
+		//printf("%s\n", subKeyName);
 		// open subkey 0000, 0001, 0002 ....
 
 		DWORD dwKeyValueType;
@@ -50,7 +51,7 @@ std::string TuntapWindows::GetTunDeviceID()
 
 		std::string value_str((char*)lpbKeyValueData);
 		if (value_str == expect_value) {
-			printf("found tap0901\n");
+			//printf("found tap0901\n");
 			dwKeyValueDataSize = 256;
 			res = RegQueryValueExA(key, NetCfgName, NULL, &dwKeyValueType, lpbKeyValueData, &dwKeyValueDataSize);
 			if (res != ERROR_SUCCESS) {
@@ -196,3 +197,4 @@ bool TuntapWindows::Close()
 	return true;
 
 }
+#endif

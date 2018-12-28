@@ -1,3 +1,4 @@
+#ifdef _WIN32
 #pragma once
 
 #include "../utils/singleton.h"
@@ -24,4 +25,4 @@ private:
 	bool need_restart = false;
 
 };
-
+#endif

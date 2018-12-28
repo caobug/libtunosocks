@@ -1,6 +1,4 @@
-//
-// Created by Mario Lau's Mac on 2018-12-25.
-//
+#ifdef __APPLE__
 
 #include "tuntap_macos.h"
 
@@ -73,3 +71,4 @@ bool TuntapMacOS::Close()
     close(this->GetTunHandle());
     return true;
 }
+#endif

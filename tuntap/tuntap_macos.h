@@ -1,3 +1,4 @@
+#ifdef __APPLE__
 #pragma once
 
 #include "../utils/singleton.h"
@@ -17,3 +18,4 @@ public:
 
 };
 
+#endif
