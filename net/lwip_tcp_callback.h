@@ -23,6 +23,9 @@ err_t tcp_recv_func(void *arg, struct tcp_pcb *tpcb, pbuf *p, err_t err)
 	assert(p->len == p->tot_len);
 	printf("tcp_recv_func call, read %zu bytes\n", p->tot_len);
 
+	tcp_abort(tpcb);
+	return ERR_ABRT;
+
 	auto res = TcpHandler::GetInstance()->Handle(tpcb, p);
 
 	// !res means packet is rejected cause session is closed

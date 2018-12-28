@@ -130,15 +130,15 @@ bool TuntapWindows::Open()
 
 	struct in_addr ep[3];
 
-	ep[0].S_un.S_un_b.s_b1 = 169;
-	ep[0].S_un.S_un_b.s_b2 = 254;
-	ep[0].S_un.S_un_b.s_b3 = 128;
-	ep[0].S_un.S_un_b.s_b4 = 127;
+	ep[0].S_un.S_un_b.s_b1 = 10;
+	ep[0].S_un.S_un_b.s_b2 = 2;
+	ep[0].S_un.S_un_b.s_b3 = 0;
+	ep[0].S_un.S_un_b.s_b4 = 2;
 
-	ep[1].S_un.S_un_b.s_b1 = 169;
-	ep[1].S_un.S_un_b.s_b2 = 254;
-	ep[1].S_un.S_un_b.s_b3 = 128;
-	ep[1].S_un.S_un_b.s_b4 = 126;
+	ep[1].S_un.S_un_b.s_b1 = 10;
+	ep[1].S_un.S_un_b.s_b2 = 2;
+	ep[1].S_un.S_un_b.s_b3 = 0;
+	ep[1].S_un.S_un_b.s_b4 = 10;
 
 	ep[2].S_un.S_un_b.s_b1 = 255;
 	ep[2].S_un.S_un_b.s_b2 = 255;
@@ -176,7 +176,7 @@ restart:
 	Sleep(1000);
 
 	auto set_ip_script = std::string("netsh interface ipv4 set address name = ") + R"(")" + std::string(tunAdapterName.begin(), tunAdapterName.end()) + R"(")" +
-		std::string(" source = static addr=169.254.128.127 mask=255.255.255.0 gateway=169.254.128.126");
+		std::string(" source = static addr=10.2.0.2 mask=255.255.255.0 gateway=10.2.0.10");
 	system(set_ip_script.c_str());
 
 	return true;
