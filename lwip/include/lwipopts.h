@@ -2080,4 +2080,7 @@
 #define DNS_DEBUG                       LWIP_DBG_OFF
 #endif
 
+
+
+
 #endif /* lwipopts_h */

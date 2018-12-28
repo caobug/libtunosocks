@@ -1,6 +1,6 @@
 #pragma once
 
-#include "singleton.h"
+#include "../utils/singleton.h"
 
 #include "ituntap.h"
 
@@ -16,8 +16,8 @@ public:
 
 protected:
 
-	static std::wstring GetTunDeviceID();
-	static std::wstring GetDeviceName(std::wstring tun_guid);
+	static std::string GetTunDeviceID();
+	static std::string GetDeviceName(std::string tun_guid);
 
 private:
 

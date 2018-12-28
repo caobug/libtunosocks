@@ -6,7 +6,6 @@
 #include <boost/thread.hpp>
 
 #include <boost/bind.hpp>
-#define BOOST_COROUTINES_NO_DEPRECATION_WARNING
 #include <boost/asio/spawn.hpp>
 
 #include "packethandler.h"
@@ -16,7 +15,6 @@ auto self(GetInstance()); \
 boost::asio::spawn([this, self](boost::asio::yield_context yield) {  boost::system::error_code ec; auto packet_handler = PacketHandler::GetInstance(); \
 	while (true) { auto bytes_read = tun_socket_.async_read_some(boost::asio::buffer(tun_recv_buff_, TUN_DEVICE_BUFFER_SIZE), yield[ec]); \
 		if (ec) {printf("async_read_some err --> %s\n", ec.message().c_str()); return; } \
-		printf("read %zu bytes from tun device\n", bytes_read); \
 		packet_handler->Input(tun_recv_buff_, bytes_read); \
 	}\
 });

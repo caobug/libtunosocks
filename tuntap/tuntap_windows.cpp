@@ -2,12 +2,12 @@
 #include "tap-windows.h"
 #include <string>
 
-std::wstring TuntapWindows::GetTunDeviceID() 
+std::string TuntapWindows::GetTunDeviceID() 
 {
 	HKEY hkey;
-	LPCWSTR adapterKey = TEXT("SYSTEM\\CurrentControlSet\\Control\\Class\\{4D36E972-E325-11CE-BFC1-08002BE10318}");
+	auto adapterKey = TEXT("SYSTEM\\CurrentControlSet\\Control\\Class\\{4D36E972-E325-11CE-BFC1-08002BE10318}");
 
-	if (ERROR_SUCCESS != RegOpenKeyEx(HKEY_LOCAL_MACHINE, adapterKey, 0, KEY_READ, &hkey)) {
+	if (ERROR_SUCCESS != RegOpenKeyExA(HKEY_LOCAL_MACHINE, adapterKey, 0, KEY_READ, &hkey)) {
 		exit(-1);
 	}
 
@@ -15,16 +15,16 @@ std::wstring TuntapWindows::GetTunDeviceID()
 	DWORD subKeyNameMaxLen;
 	RegQueryInfoKey(hkey, NULL, NULL, 0, &subKeyNum, &subKeyNameMaxLen, NULL, NULL, NULL, NULL, NULL, NULL);
 
-	LPWSTR subKeyName = new WCHAR[subKeyNameMaxLen + 1];
+	auto subKeyName = new char[subKeyNameMaxLen + 1];
 
 	for (DWORD i = 1; i < subKeyNum; i++) {
 		DWORD NameNum = subKeyNameMaxLen + 1;
-		int res = RegEnumKeyEx(hkey, i, subKeyName, &NameNum, NULL, NULL, NULL, NULL);
+		int res = RegEnumKeyExA(hkey, i, subKeyName, &NameNum, NULL, NULL, NULL, NULL);
 
 		if (res != ERROR_SUCCESS) {
 			break;
 		}
-		printf("%S\n", subKeyName);
+		printf("%s\n", subKeyName);
 		// open subkey 0000, 0001, 0002 ....
 
 		DWORD dwKeyValueType;
@@ -33,32 +33,32 @@ std::wstring TuntapWindows::GetTunDeviceID()
 		LPBYTE lpbKeyValueData = new BYTE[256];
 
 		HKEY key;
-		std::wstring subkey = std::wstring(adapterKey) + std::wstring(TEXT("\\")) + std::wstring(subKeyName);
-		res = RegOpenKeyEx(HKEY_LOCAL_MACHINE, subkey.c_str(), 0, KEY_READ, &key);
+		std::string subkey = std::string(adapterKey) + std::string(TEXT("\\")) + std::string(subKeyName);
+		res = RegOpenKeyExA(HKEY_LOCAL_MACHINE, subkey.c_str(), 0, KEY_READ, &key);
 		if (ERROR_SUCCESS != res) {
 			continue;
 		}
 
 
-		const LPCWSTR valueName = TEXT("MatchingDeviceId");
-		const LPCWSTR NetCfgName = TEXT("NetCfgInstanceId");
-		const std::wstring expect_value(TEXT("tap0901"));
-		res = RegQueryValueEx(key, valueName, NULL, &dwKeyValueType, lpbKeyValueData, &dwKeyValueDataSize);
+		const auto valueName = TEXT("MatchingDeviceId");
+		const auto NetCfgName = TEXT("NetCfgInstanceId");
+		const std::string expect_value(TEXT("tap0901"));
+		res = RegQueryValueExA(key, valueName, NULL, &dwKeyValueType, lpbKeyValueData, &dwKeyValueDataSize);
 		if (res != ERROR_SUCCESS) {
 			printf("error\n");
 		}
 
-		std::wstring value_str((LPWSTR)lpbKeyValueData);
+		std::string value_str((char*)lpbKeyValueData);
 		if (value_str == expect_value) {
 			printf("found tap0901\n");
 			dwKeyValueDataSize = 256;
-			res = RegQueryValueEx(key, NetCfgName, NULL, &dwKeyValueType, lpbKeyValueData, &dwKeyValueDataSize);
+			res = RegQueryValueExA(key, NetCfgName, NULL, &dwKeyValueType, lpbKeyValueData, &dwKeyValueDataSize);
 			if (res != ERROR_SUCCESS) {
 				printf("error\n");
 				getchar();
 			}
-			std::wstring netcfg_str((LPWSTR)lpbKeyValueData);
-			printf("Get netcfg: %ls\n", netcfg_str.c_str());
+			std::string netcfg_str((char*)lpbKeyValueData);
+			printf("Get netcfg: %s\n", netcfg_str.c_str());
 			RegCloseKey(key);
 			delete[] lpbKeyValueData;
 			return netcfg_str;
@@ -71,19 +71,19 @@ std::wstring TuntapWindows::GetTunDeviceID()
 	}
 
 
-	return std::wstring{L""};
+	return "";
 }
 
 
-std::wstring TuntapWindows::GetDeviceName(std::wstring tun_guid) {
-	if (tun_guid.empty()) return std::wstring { L"" };
+std::string TuntapWindows::GetDeviceName(std::string tun_guid) {
+	if (tun_guid.empty()) return "";
 
-	const LPCWSTR connectionKey = TEXT(
+	const auto connectionKey = TEXT(
 		"SYSTEM\\CurrentControlSet\\Control\\Network\\{4D36E972-E325-11CE-BFC1-08002BE10318}");
 
-	std::wstring connectionKeyFull =
-		std::wstring(connectionKey) + std::wstring(TEXT("\\")) + std::wstring(tun_guid.begin(), tun_guid.end()) +
-		std::wstring(TEXT("\\Connection"));
+	std::string connectionKeyFull =
+		std::string(connectionKey) + std::string(TEXT("\\")) + std::string(tun_guid.begin(), tun_guid.end()) +
+		std::string(TEXT("\\Connection"));
 	HKEY hkey;
 
 	if (ERROR_SUCCESS != RegOpenKeyEx(HKEY_LOCAL_MACHINE, connectionKeyFull.c_str(), 0, KEY_READ, &hkey)) {
@@ -94,13 +94,13 @@ std::wstring TuntapWindows::GetDeviceName(std::wstring tun_guid) {
 	DWORD dwKeyValueDataSize = 256;
 
 	LPBYTE lpbKeyValueData = new BYTE[256];
-	const LPCWSTR valueName = TEXT("Name");
-	int res = RegQueryValueEx(hkey, valueName, NULL, &dwKeyValueType, lpbKeyValueData, &dwKeyValueDataSize);
+	const auto valueName = TEXT("Name");
+	int res = RegQueryValueExA(hkey, valueName, NULL, &dwKeyValueType, lpbKeyValueData, &dwKeyValueDataSize);
 	if (res != ERROR_SUCCESS) {
 		printf("error\n");
 	}
 
-	return std::wstring((LPWSTR)lpbKeyValueData);
+	return std::string((char*)lpbKeyValueData);
 	
 }
 
@@ -115,7 +115,7 @@ bool TuntapWindows::Open()
 
 	auto tunGuid = TuntapWindows::GetTunDeviceID();
 	auto tunAdapterName = TuntapWindows::GetDeviceName(tunGuid);
-	auto tunDeviceFileName = std::wstring(L"\\\\.\\Global\\") + tunGuid + std::wstring(L".tap");
+	auto tunDeviceFileName = std::string("\\\\.\\Global\\") + tunGuid + std::string(".tap");
 	
 	if (need_restart) goto restart;
 
@@ -174,8 +174,8 @@ restart:
 
 	Sleep(1000);
 
-	auto set_ip_script = std::string("netsh interface ipv4 set address name=") + R"(")" + std::string(tunAdapterName.begin(), tunAdapterName.end()) + R"(")" +
-		std::string(" address=169.254.128.127 mask=255.255.255.0 gateway=169.254.128.126");
+	auto set_ip_script = std::string("netsh interface ipv4 set address name = ") + R"(")" + std::string(tunAdapterName.begin(), tunAdapterName.end()) + R"(")" +
+		std::string(" source = static addr=169.254.128.127 mask=255.255.255.0 gateway=169.254.128.126");
 	system(set_ip_script.c_str());
 
 	return true;

@@ -8,10 +8,10 @@
 #include "../tuntap/tuntap_macos.h"
 #define TuntapDevice TuntapMacOS
 #elif defined(_WIN32)
-#include "tuntap_windows.h"
+#include "../tuntap/tuntap_windows.h"
 #define TuntapDevice TuntapWindows
 #elif defined(__linux__)
-#include "tuntap_linux.h"
+#include "../tuntap/tuntap_linux.h"
 #define TuntapDevice TuntapLinux
 #else
 #error "Unknow Platform"
@@ -33,6 +33,8 @@ public:
 
 
 	bool Init();
+
+	void SetSocks5Host(std::string ip, std::string port);
 
 	void AsyncRun();
 

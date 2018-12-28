@@ -10,6 +10,7 @@
 
 err_t netif_output_func(struct netif *netif, struct pbuf *p, const ip4_addr_t *ipaddr) {
 
+#ifdef __APPLE__
 
     struct pbuf *packet_with_tun_header = pbuf_alloc(PBUF_IP, p->len + 4, PBUF_RAM);
     if (!packet_with_tun_header) {
@@ -20,12 +21,16 @@ err_t netif_output_func(struct netif *netif, struct pbuf *p, const ip4_addr_t *i
     if (ERR_OK != pbuf_take_at(packet_with_tun_header, p->payload, p->len, 4)) {
         return ERR_BUF;
     }
+	((uint32_t*)packet_with_tun_header->payload)[0] = 2;
 
-    ((uint32_t*)packet_with_tun_header->payload)[0] = 2;
+	assert(packet_with_tun_header->len == packet_with_tun_header->tot_len);
 
-    assert(packet_with_tun_header->len == packet_with_tun_header->tot_len);
+	TuntapHelper::GetInstance()->Inject(packet_with_tun_header);
 
-    TuntapHelper::GetInstance()->Inject(packet_with_tun_header);
+#endif
+
+	
+	TuntapHelper::GetInstance()->Inject(p);
 
 
     return ERR_OK;

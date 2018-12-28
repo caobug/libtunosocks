@@ -9,10 +9,10 @@ class FileHelper
 
 public:
 
-	static std::wstring GetCurrentDir()
+	static std::string GetCurrentDir()
 	{
 		boost::filesystem::path full_path(boost::filesystem::current_path());
-		return full_path.wstring() + std::wstring{ L"\\" };
+		return full_path.string() + std::string{ "\\" };
 	}
 
 

@@ -1,8 +1,13 @@
 #include "net/socksifier.h"
 
+#include "tuntap/tuntapinstaller.h"
+
+
 int main()
 {
+	//TuntapInstaller::GetInstance()->Uninstall();
 
+	//TuntapInstaller::GetInstance()->Install();
 
     auto res = Socksifier::GetInstance()->Init();
 
@@ -20,7 +25,7 @@ int main()
 
     }
 
-    sleep(2222);
+    getchar();
 
 }
 

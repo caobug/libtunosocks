@@ -1,7 +1,7 @@
 #pragma once
 
-#include "singleton.h"
-#include "filehelper.h"
+#include "../utils/singleton.h"
+#include "../utils/filehelper.h"
 
 #include <Windows.h>
 
@@ -14,16 +14,16 @@ public:
 	TuntapInstaller()
 	{
 		current_path = FileHelper::GetCurrentDir();
-		wprintf(L"current_path: %s", current_path.c_str());
+		printf("current_path: %s", current_path.c_str());
 	}
 
 	bool Find()
 	{
 		if (!isRunningasAdmin()) return false;
 
-		std::wstring tapinstaller_path = current_path + tapinstaller_path_prefix;
+		std::string tapinstaller_path = current_path + tapinstaller_path_prefix;
 
-		std::wstring cmd = tapinstaller_path + std::wstring{ L" find " } + std::wstring{ L" tap0901" };
+		std::string cmd = tapinstaller_path + std::string{ " find " } + std::string{ " tap0901" };
 		
 		if (startup(tapinstaller_path, cmd) != 0) return false;
 
@@ -34,10 +34,10 @@ public:
 	{
 		if (!isRunningasAdmin()) return false; 
 			
-		std::wstring tapinstaller_path = current_path + tapinstaller_path_prefix;
-		std::wstring tapinstaller_inf_path = current_path + inf_path_prefix;
+		std::string tapinstaller_path = current_path + tapinstaller_path_prefix;
+		std::string tapinstaller_inf_path = current_path + inf_path_prefix;
 
-		std::wstring cmd = tapinstaller_path + std::wstring{L" install "} + tapinstaller_inf_path + std::wstring{L" tap0901"};
+		std::string cmd = tapinstaller_path + std::string{" install "} + tapinstaller_inf_path + std::string{" tap0901"};
 
 
 		if (startup(tapinstaller_path, cmd) != 0) return false;
@@ -49,10 +49,10 @@ public:
 	{
 		if (!isRunningasAdmin()) return false;
 
-		std::wstring tapinstaller_path = current_path + tapinstaller_path_prefix;
-		std::wstring tapinstaller_inf_path = current_path + inf_path_prefix;
+		std::string tapinstaller_path = current_path + tapinstaller_path_prefix;
+		std::string tapinstaller_inf_path = current_path + inf_path_prefix;
 
-		std::wstring cmd = tapinstaller_path + std::wstring{ L" remove " } +std::wstring{ L" tap0901" };
+		std::string cmd = tapinstaller_path + std::string{ " remove " } +std::string{ " tap0901" };
 
 		if (startup(tapinstaller_path, cmd) != 0) return false;
 
@@ -60,9 +60,9 @@ public:
 	}
 
 private:
-	std::wstring current_path;
-	const std::wstring tapinstaller_path_prefix{ L"tap-driver\\devcon.exe" };
-	const std::wstring inf_path_prefix{ L"tap-driver\\OemVista.inf" };
+	std::string current_path;
+	const std::string tapinstaller_path_prefix{ "tap-driver\\devcon.exe" };
+	const std::string inf_path_prefix{ "tap-driver\\OemVista.inf" };
 
 
 	BOOL isRunningasAdmin()
@@ -92,7 +92,7 @@ private:
 
 
 
-	DWORD startup(std::wstring app_path, std::wstring cmd)
+	DWORD startup(std::string app_path, std::string cmd)
 	{
 		//wprintf(L"app_path: %s", app_path.c_str());
 		// additional information
@@ -108,8 +108,8 @@ private:
 		ZeroMemory(&pi, sizeof(pi));
 
 		// start the program up
-		int res = CreateProcess(app_path.c_str(),   // the path
-			const_cast<LPWSTR>(cmd.c_str()),        // Command line
+		int res = CreateProcessA(app_path.c_str(),   // the path
+			const_cast<char*>(cmd.c_str()),        // Command line
 			NULL,           // Process handle not inheritable
 			NULL,           // Thread handle not inheritable
 			FALSE,          // Set handle inheritance to FALSE

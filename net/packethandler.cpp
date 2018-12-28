@@ -1,15 +1,51 @@
 #include "packethandler.h"
 #include "lwiphelper.h"
 
+#include <lwip/sockets.h>
+#include <lwip/ip4.h>
 #include <iostream>
+
+const int PROTO_TCP = 6;
+const int PROTO_UDP = 17;
+const int PROTO_ICMP = 1;
 
 void PacketHandler::Input(void* packet, uint64_t size)
 {
 
-    for (int i = 0; i < size; ++i) {
-        printf("%x ",((unsigned char*)packet)[i]);
-        fflush(stdout);
-    }
+    //for (int i = 0; i < size; ++i) {
+    //    printf("%x ",((unsigned char*)packet)[i]);
+    //    fflush(stdout);
+    //}
+#if defined(__APPLE__) || defined(__linux__)
+	auto ip_header = (ip_hdr*)((char*)packet + 4);
+#elif _WIN32
+	auto ip_header = (ip_hdr*)packet;
+#endif
+
+	if ((ip_header->_v_hl & 0xf0) >> 4 != 0x04) {
+		return;
+	}
+
+	switch (IPH_PROTO(ip_header))
+	{
+		case PROTO_TCP:
+		{
+			break;
+		}
+		case PROTO_UDP:
+		{
+			break;
+		}
+
+		case PROTO_ICMP:
+		{
+			break;
+		}
+
+		default:
+			return;
+	}
+
 
 
 #if defined(__APPLE__) || defined(__linux__)
@@ -22,13 +58,13 @@ void PacketHandler::Input(void* packet, uint64_t size)
         LWIP_ASSERT("len err", p->len == size - 4);
     }
 #elif _WIN32
-    struct pbuf *packet = pbuf_alloc(PBUF_IP, size, PBUF_RAM);
+    struct pbuf *p = pbuf_alloc(PBUF_IP, size, PBUF_RAM);
 	if (!packet) {
-		LOG(FATAL) << "pbuf_alloc err\n";
+		std::cout << "pbuf_alloc err\n";
 	}
 
-	if (ERR_OK == pbuf_take(packet, &local_recv_buff_[0], size)) {
-		LWIP_ASSERT("len err", packet->len == size);
+	if (ERR_OK == pbuf_take(p, packet, size)) {
+		LWIP_ASSERT("len err", p->len == size);
 	}
 #endif
 
