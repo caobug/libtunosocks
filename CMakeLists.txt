@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 project(libtun2socks)
-		
-IF (WIN32)
 set(CMAKE_CXX_STANDARD 14)
+
+IF (WIN32)
 set(CMAKE_GENERATOR_PLATFORM STRING x64)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
 set(CMAKE_EXE_LINKER_FLAGS "/machine:X64")
@@ -15,9 +15,7 @@ set(CMAKE_SHARED_LINKER_FLAGS "/machine:X64" CACHE STRING "x64" FORCE)
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Debug;Release" FORCE)
 include_directories("C:/Boost/include/boost-1_68")
 include_directories("C:/Users/mario/Documents/spdlog-1.2.1/include")
-
 link_directories("C:/Boost/lib")
-
 endif()
 
 function(assign_source_group)
@@ -74,10 +72,19 @@ IF (WIN32)
   add_definitions(-D_WINSOCK_DEPRECATED_NO_WARNINGS)
   add_definitions(-DLWIP_DONT_PROVIDE_BYTEORDER_FUNCTIONS)
 
-  ELSE(APPLE)
-  add_executable(libtun2socks 
-		tuntap/tuntap_macos.cpp)
-
 ENDIF()
 set_target_properties(libtun2socks PROPERTIES PREFIX "")
 
+IF (APPLE)
+include_directories("/Users/mario/Documents/spdlog-1.2.1/include")
+
+set(Boost_USE_STATIC_LIBS ON)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
+find_package(Boost 1.68.0 REQUIRED system  coroutine context regex thread)
+
+IF (Boost_FOUND)
+    include_directories(${Boost_INCLUDE_DIRS})
+    target_link_libraries(libtun2socks ${Boost_LIBRARIES})
+ENDIF ()
+ENDIF()

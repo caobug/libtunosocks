@@ -1,3 +1,4 @@
+#ifdef _WIN32
 #pragma once
 
 #include "../utils/singleton.h"
@@ -146,4 +147,4 @@ private:
 
 
 };
-
+#endif
