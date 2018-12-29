@@ -44,6 +44,8 @@ public:
 
 	TUN_SOCKET& GetTunSocket();
 
+	IO_Context& GetIOContext();
+
 private:
 
 	IO_Context io_context_;

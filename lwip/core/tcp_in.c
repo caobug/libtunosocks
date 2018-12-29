@@ -1089,8 +1089,14 @@ tcp_free_acked_segments(struct tcp_pcb *pcb, struct tcp_seg *seg_list, const cha
                                  (tcpwnd_size_t)pcb->snd_queuelen,
                                  dbg_list_name));
     if (pcb->snd_queuelen != 0) {
-      LWIP_ASSERT("tcp_receive: valid queue length",
-                  seg_list != NULL || dbg_other_seg_list != NULL);
+
+        if (seg_list != NULL || dbg_other_seg_list != NULL)
+        {
+            //break here
+            int i = 1;
+        }
+        //LWIP_ASSERT("tcp_receive: valid queue length",
+      //            seg_list != NULL || dbg_other_seg_list != NULL);
     }
   }
   return seg_list;

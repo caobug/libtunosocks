@@ -40,11 +40,6 @@ void PacketHandler::Input(void* packet, uint64_t size)
         assert(p->len == size - 4);
     }
 
-    //TODO FIX
-    if (p->len == 0)
-    {
-        abort();
-    }
 
 #elif _WIN32
     struct pbuf *p = pbuf_alloc(PBUF_IP, size, PBUF_RAM);
@@ -58,9 +53,7 @@ void PacketHandler::Input(void* packet, uint64_t size)
 #endif
 
     auto netif = LwipHelper::GetInstance()->GetNetIf();
-
     netif.input(p, &netif);
 
-    //printf("read %zu bytes\n",size);
 
 }

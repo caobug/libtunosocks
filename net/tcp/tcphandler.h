@@ -13,9 +13,9 @@ class TcpHandler : public Singleton<TcpHandler>
 
 public:
 
-	TcpHandler() : worker(boost::asio::make_work_guard(io_context))
+	TcpHandler() : io_context(Socksifier::GetInstance()->GetIOContext())// : worker(boost::asio::make_work_guard(io_context))
 	{
-		boost::thread t1(boost::bind(&boost::asio::io_context::run, &this->io_context));
+		//boost::thread t1(boost::bind(&boost::asio::io_context::run, &this->io_context));
 	}
 
 	// if client close pcb we need to close the remote session which is no longer needed
@@ -25,10 +25,8 @@ public:
 
 		// session should never die before
 		assert(res != session_map.end());
-
+		res->second->Stop();
 		session_map.erase(res);
-
-
 	}
 
 
@@ -67,7 +65,7 @@ private:
 
 	SessionMap session_map;
 
-	boost::asio::io_context io_context;
-	boost::asio::executor_work_guard<boost::asio::io_context::executor_type> worker;
+	boost::asio::io_context& io_context;
+	//boost::asio::executor_work_guard<boost::asio::io_context::executor_type> worker;
 
 };

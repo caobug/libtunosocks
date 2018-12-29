@@ -28,10 +28,13 @@ public:
 	{
 		this->status = INIT;
 		original_pcb = pcb;
+		original_pcb->callback_arg = this;
+        original_pcb_copy = *pcb;
 	}
 
 	~TcpSession()
 	{
+        original_pcb->callback_arg = nullptr;
 		LOG_DEBUG("session die!");
 	}
 
@@ -63,6 +66,18 @@ public:
 
 	}
 
+	void Stop()
+    {
+	    if (status == CLOSE) return;
+	    this->remote_socket.cancel();
+	    this->status = CLOSE;
+    }
+
+    tcp_pcb GetPcbCopy()
+    {
+	    return original_pcb_copy;
+    }
+
 	void EnqueuePacket(pbuf* p)
 	{
 		pbuf_queue.push(p);
@@ -84,14 +99,14 @@ public:
 			pbuf_queue.pop();
 
 			async_write(this->remote_socket, boost::asio::buffer(front->payload, front->tot_len),
-				boost::bind(&TcpSession::handlerOnRemoteSend, 
+				boost::bind(&TcpSession::handlerOnRemoteSend,
 					shared_from_this(),
 					boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
 
 			//pbuf_free(p);
 
 		}
-		
+
 	}
 
 	void handlerOnRemoteSend(const boost::system::error_code &ec, const size_t &size)
@@ -111,10 +126,44 @@ public:
 		return status;
 	}
 
+
+	void ReadFromRemote()
+    {
+
+	    auto self(this->shared_from_this());
+        boost::asio::spawn(this->remote_socket.get_io_context(), [this, self](boost::asio::yield_context yield) {
+
+            // Downstream Coroutine
+            boost::system::error_code ec;
+
+            auto bytes_read = this->remote_socket.async_read_some(boost::asio::buffer(remote_recv_buff_, TCP_LOCAL_RECV_BUFF_SIZE), yield[ec]);
+
+            if (ec)
+            {
+                LOG_DEBUG("[{:p}] handleRemoteRead err --> {}", (void*)this, ec.message().c_str())
+                return false;
+            }
+
+            LOG_DEBUG("read {} bytes data from socks5 server", bytes_read);
+            //stop reading if local have no buf
+            if (tcp_sndbuf(original_pcb) < TCP_LOCAL_RECV_BUFF_SIZE)
+            {
+                LOG_DEBUG("local have {} buf left stopped", tcp_sndbuf(original_pcb));
+            }
+            tcp_write(original_pcb, remote_recv_buff_, bytes_read, TCP_WRITE_FLAG_COPY);
+
+            tcp_output(original_pcb);
+
+        });
+    }
+
+
+
 private:
 	TcpSessionStatus status;
 
-	tcp_pcb* original_pcb;
+    tcp_pcb* original_pcb;
+    tcp_pcb original_pcb_copy;
 	SessionMap& session_map_ref;
 
 	std::queue<pbuf*> pbuf_queue;
@@ -265,34 +314,25 @@ private:
 		// Downstream Coroutine
 		boost::system::error_code ec;
 
-		while (1)
-		{
-			auto bytes_read = this->remote_socket.async_read_some(boost::asio::buffer(remote_recv_buff_, TCP_LOCAL_RECV_BUFF_SIZE), yield[ec]);
+        auto bytes_read = this->remote_socket.async_read_some(boost::asio::buffer(remote_recv_buff_, TCP_LOCAL_RECV_BUFF_SIZE), yield[ec]);
 
-			if (ec)
-			{
-				LOG_DEBUG("[{:p}] handleRemoteRead err --> {}", (void*)this, ec.message().c_str())
-				return false;
-			}
+        if (ec)
+        {
+            LOG_DEBUG("[{:p}] handleRemoteRead err --> {}", (void*)this, ec.message().c_str())
+            return false;
+        }
 
-			LOG_DEBUG("read {} bytes data to socks5 server", bytes_read);
+        LOG_DEBUG("read {} bytes data from socks5 server", bytes_read);
 
+        tcp_write(original_pcb, remote_recv_buff_, bytes_read, 0);
 
+        tcp_output(original_pcb);
 
-
-
-			tcp_write(original_pcb, remote_recv_buff_, bytes_read, TCP_WRITE_FLAG_COPY);
-
-			tcp_output(original_pcb);
-
-			//stop reading if local have no buf
-			if (tcp_sndbuf(original_pcb) < TCP_LOCAL_RECV_BUFF_SIZE)
-			{
-				LOG_DEBUG("local have {} buf left stopped", tcp_sndbuf(original_pcb));
-				break;
-			}
-
-		}
+        //stop reading if local have no buf
+        if (tcp_sndbuf(original_pcb) < TCP_LOCAL_RECV_BUFF_SIZE)
+        {
+            LOG_DEBUG("local have {} buf left stopped", tcp_sndbuf(original_pcb));
+        }
 
 	}
 

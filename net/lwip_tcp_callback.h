@@ -20,8 +20,7 @@ err_t tcp_recv_func(void *arg, struct tcp_pcb *tpcb, pbuf *p, err_t err)
 	//if closed
 	if (!p)
 	{
-		printf("tcp close ? p == null\n");
-
+		//printf("tcp close ? p == null\n");
 		assert(tpcb->state == CLOSE_WAIT);
 		tcp_close(tpcb);
 		TcpHandler::GetInstance()->Clear(tpcb);
@@ -43,9 +42,10 @@ err_t tcp_recv_func(void *arg, struct tcp_pcb *tpcb, pbuf *p, err_t err)
 
 err_t tcp_sent_func(void *arg, struct tcp_pcb *tpcb, u16_t len)
 {
-
-	//printf("tcp_sent_func call, send %d len and get ack\n", len);
-
+    auto tcp_session = (TcpSession*)tpcb->callback_arg;
+    tcp_session->ReadFromRemote();
+	printf("tcp_sent_func call, send %d len and get ack\n", len);
+	return ERR_OK;
 }
 
 
@@ -55,6 +55,13 @@ void tcp_err_func(void *arg, err_t err)
 		printf("tcp_err_func ERR_ABRT\n");
 	else
 		printf("tcp_err_func err %d \n", err);
+
+	if (arg)
+	{
+		auto tcp_session = (TcpSession*)arg;
+		auto pcb_copy = tcp_session->GetPcbCopy();
+		TcpHandler::GetInstance()->Clear(&pcb_copy);
+	}
 
 }
 
@@ -74,6 +81,6 @@ err_t listener_accept_func(void *arg, struct tcp_pcb *newpcb, err_t err) {
 	newpcb->recv = tcp_recv_func;
 	newpcb->sent = tcp_sent_func;
 	newpcb->errf = tcp_err_func;
-
+    tcp_nagle_disable(newpcb);
     return ERR_OK;
 }

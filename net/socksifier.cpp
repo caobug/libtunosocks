@@ -86,3 +86,8 @@ TUN_SOCKET& Socksifier::GetTunSocket()
 {
 	return tun_socket_;
 }
+
+boost::asio::io_context& Socksifier::GetIOContext()
+{
+	return io_context_;
+}

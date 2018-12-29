@@ -10,22 +10,27 @@
 
 err_t netif_output_func(struct netif *netif, struct pbuf *p, const ip4_addr_t *ipaddr) {
 
+
 #ifdef __APPLE__
-    struct pbuf *packet_with_tun_header = pbuf_alloc(PBUF_IP, p->len + 4, PBUF_RAM);
-    if (!packet_with_tun_header) {
-        printf("pbuf_alloc err\n");
-        return ERR_BUF;
+
+    // p might be seperate
+    auto dechained_p = pbuf_alloc(PBUF_IP, p->tot_len + 4, PBUF_RAM);
+    auto pp = p;
+    int offset = 0;
+    while (pp)
+    {
+        if (ERR_OK != pbuf_take_at(dechained_p, pp->payload, pp->len, 4 + offset)) {
+            return ERR_BUF;
+        }
+        offset += pp->len;
+        pp = pp->next;
     }
 
-    if (ERR_OK != pbuf_take_at(packet_with_tun_header, p->payload, p->len, 4)) {
-        return ERR_BUF;
-    }
+	((uint32_t*)dechained_p->payload)[0] = 33554432;
 
-	((uint32_t*)packet_with_tun_header->payload)[0] = 33554432;
+	assert(dechained_p->len == dechained_p->tot_len);
 
-	assert(packet_with_tun_header->len == packet_with_tun_header->tot_len);
-
-	TuntapHelper::GetInstance()->Inject(packet_with_tun_header);
+	TuntapHelper::GetInstance()->Inject(dechained_p);
 
     return ERR_OK;
 #endif
