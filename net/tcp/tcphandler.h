@@ -18,6 +18,20 @@ public:
 		boost::thread t1(boost::bind(&boost::asio::io_context::run, &this->io_context));
 	}
 
+	// if client close pcb we need to close the remote session which is no longer needed
+	void Clear(tcp_pcb *pcb)
+	{
+		auto res = session_map.find(*pcb);
+
+		// session should never die before
+		assert(res != session_map.end());
+
+		session_map.erase(res);
+
+
+	}
+
+
 	bool Handle(tcp_pcb *pcb, pbuf* p)
 	{
 		auto res = session_map.find(*pcb);
@@ -27,15 +41,19 @@ public:
 		{
 			auto new_session = boost::make_shared<TcpSession>(pcb, session_map, io_context);
 			session_map.insert(std::make_pair(*pcb, new_session));
+			new_session->SetSocks5ServerEndpoint("127.0.0.1", 1086);
+			// socks5 server not connect yet, we have to enqueue the first packet
 			new_session->EnqueuePacket(p);
 			new_session->Start();
 			return true;
 		}
 
 		// old session
-		if (res->second->GetSeesionStatus() == CLOSED)
+		if (res->second->GetSeesionStatus() == CLOSE)
 		{
 			LOG_DEBUG("session closed")
+			//release session
+			session_map.erase(res);
 			return false;
 		}
 

@@ -6,6 +6,7 @@
 int main()
 {
 	Logger::GetInstance()->InitLog();
+    Logger::GetInstance()->SetLevel(spdlog::level::debug);
 	//TuntapInstaller::GetInstance()->Uninstall();
 
 	//TuntapInstaller::GetInstance()->Install();

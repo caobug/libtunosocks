@@ -18,27 +18,43 @@
 err_t tcp_recv_func(void *arg, struct tcp_pcb *tpcb, pbuf *p, err_t err)
 {
 	//if closed
-	if (!p) return ERR_OK;
+	if (!p)
+	{
+		printf("tcp close ? p == null\n");
+
+		assert(tpcb->state == CLOSE_WAIT);
+		tcp_close(tpcb);
+		TcpHandler::GetInstance()->Clear(tpcb);
+		return ERR_OK;
+	}
 
 	assert(p->len == p->tot_len);
-	printf("tcp_recv_func call, read %zu bytes\n", p->tot_len);
-
-	tcp_abort(tpcb);
-	return ERR_ABRT;
-
-	auto res = TcpHandler::GetInstance()->Handle(tpcb, p);
+	printf("tcp_recv_func call, pcb state: %d, read %hu bytes\n", tpcb->state, p->tot_len);
 
 	// !res means packet is rejected cause session is closed
+	auto res = TcpHandler::GetInstance()->Handle(tpcb, p);
 	if (!res)
 	{
+		LOG_DEBUG("tcp_recv data but session closed")
 		//TODO
 	}
 	return ERR_OK;
 }
 
+err_t tcp_sent_func(void *arg, struct tcp_pcb *tpcb, u16_t len)
+{
+
+	//printf("tcp_sent_func call, send %d len and get ack\n", len);
+
+}
+
+
 void tcp_err_func(void *arg, err_t err)
 {
-	printf("tcp_err_func call\n");
+	if (err == ERR_ABRT)
+		printf("tcp_err_func ERR_ABRT\n");
+	else
+		printf("tcp_err_func err %d \n", err);
 
 }
 
@@ -48,12 +64,15 @@ err_t listener_accept_func(void *arg, struct tcp_pcb *newpcb, err_t err) {
     if (err != ERR_OK) {
 
     }
-	auto src = *(in_addr*)&newpcb->remote_ip.addr;
-	auto dst = *(in_addr*)&newpcb->local_ip.addr;
-	printf("tcp accepted src: %s:%d --> dst: %s:%d\n", inet_ntoa(src), newpcb->remote_port, inet_ntoa(dst), newpcb->local_port);
+	auto src = std::string(inet_ntoa(*(in_addr*)&newpcb->remote_ip.addr));
+	auto dst = std::string(inet_ntoa(*(in_addr*)&newpcb->local_ip.addr));
+
+	LOG_DEBUG("tcp accepted src: {}:{} --> dst: {}:{}\n", src.c_str(), newpcb->remote_port, dst.c_str(), newpcb->local_port)
+
 	//when new connection is accepted, dispatch it to tcphandler
 
 	newpcb->recv = tcp_recv_func;
+	newpcb->sent = tcp_sent_func;
 	newpcb->errf = tcp_err_func;
 
     return ERR_OK;

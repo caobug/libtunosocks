@@ -37,8 +37,15 @@ void PacketHandler::Input(void* packet, uint64_t size)
     }
 
     if (ERR_OK == pbuf_take(p, (char*)packet + 4, size - 4)) {
-        LWIP_ASSERT("len err", p->len == size - 4);
+        assert(p->len == size - 4);
     }
+
+    //TODO FIX
+    if (p->len == 0)
+    {
+        abort();
+    }
+
 #elif _WIN32
     struct pbuf *p = pbuf_alloc(PBUF_IP, size, PBUF_RAM);
 	if (!packet) {

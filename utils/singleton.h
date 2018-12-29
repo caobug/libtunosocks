@@ -5,7 +5,7 @@ template<class T>
 class Singleton
 {
 public:
-#ifdef RAW_INSTANCE
+#ifdef SINGLETON_RAW_POINTER
 	template<typename... Args>
 	static T* GetInstance(Args&&... args)
 	{

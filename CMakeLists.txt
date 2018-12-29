@@ -61,8 +61,10 @@ my_add_executable(libtun2socks
 		)
 		
 add_definitions(-DBOOST_COROUTINES_NO_DEPRECATION_WARNING)
+add_definitions(-DLWIP_DONT_PROVIDE_BYTEORDER_FUNCTIONS)
+add_definitions(-DSINGLETON_RAW_POINTER)
 
-		
+
 IF (WIN32)
 	
  
@@ -70,13 +72,13 @@ IF (WIN32)
   add_definitions(-D_CRT_SECURE_NO_WARNINGS)
   add_definitions(-DWIN32_LEAN_AND_MEAN)
   add_definitions(-D_WINSOCK_DEPRECATED_NO_WARNINGS)
-  add_definitions(-DLWIP_DONT_PROVIDE_BYTEORDER_FUNCTIONS)
 
 ENDIF()
 set_target_properties(libtun2socks PROPERTIES PREFIX "")
 
 IF (APPLE)
 include_directories("/Users/mario/Documents/spdlog-1.2.1/include")
+
 
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
