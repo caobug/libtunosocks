@@ -49,7 +49,7 @@ private:
         }
 
 
-        printf("inject %zu bytes into tun device\n", size);
+        //printf("inject %zu bytes into tun device!!!\n", size);
 
 
     }
