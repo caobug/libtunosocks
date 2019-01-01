@@ -39,7 +39,7 @@ class UdpHandler : public Singleton<UdpHandler>
 public:
 	UdpHandler() : worker(boost::asio::make_work_guard(io_context))
 	{
-
+		boost::thread t1(boost::bind(&boost::asio::io_context::run, &this->io_context));
 	}
 
 	~UdpHandler()
@@ -90,10 +90,12 @@ public:
 			auto new_session = boost::make_shared<UdpSession>(io_context, udp_session_map_);
 			udp_session_map_.insert(std::make_pair(*udp_header, new_session));
 
-			//new_session->SetNatInfo(ip_header);
+			new_session->SetNatInfo(ip_header);
 			// generate standard udp socks5 header
 			Socks5ProtocolHelper::ConstructSocks5UdpPacketFromIpStringAndPort((unsigned char*)socks5_udp_packet, ip4addr_ntoa((ip4_addr_t*)&ip_header->dest), udp_header->dest);
-			new_session->SendPacketToRemote(&socks5_udp_packet, send_length);
+			
+			
+			new_session->SendPacketToRemote((void*)socks5_udp_packet, send_length);
 
 			new_session->Run();
 

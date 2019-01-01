@@ -142,34 +142,60 @@ public:
 	}
 
 
+	void CheckReadFromRemoteStatus()
+	{
+		if (tcp_sndbuf(original_pcb) > TCP_LOCAL_RECV_BUFF_SIZE)
+			should_read_from_remote = true;
+		return;
+	}
+
 	void ReadFromRemote()
     {
 
-	    auto self(this->shared_from_this());
-        boost::asio::spawn(this->remote_socket.get_io_context(), [this, self](boost::asio::yield_context yield) {
+		if (should_read_from_remote) return;
 
-            // Downstream Coroutine
-            boost::system::error_code ec;
+		auto self(this->shared_from_this());
+		boost::asio::spawn(this->remote_socket.get_io_context(), [this, self](boost::asio::yield_context yield) {
 
-            auto bytes_read = this->remote_socket.async_read_some(boost::asio::buffer(remote_recv_buff_, TCP_LOCAL_RECV_BUFF_SIZE), yield[ec]);
 
-            if (ec)
-            {
-                LOG_DEBUG("[{:p}] handleRemoteRead err --> {}", (void*)this, ec.message().c_str())
-                return false;
-            }
+			while (true)
+			{
+				// Downstream Coroutine
+				boost::system::error_code ec;
 
-            LOG_DEBUG("read {} bytes data from socks5 server", bytes_read);
-            //stop reading if local have no buf
-            if (tcp_sndbuf(original_pcb) < TCP_LOCAL_RECV_BUFF_SIZE)
-            {
-                LOG_DEBUG("local have {} buf left stopped", tcp_sndbuf(original_pcb));
-            }
-            tcp_write(original_pcb, remote_recv_buff_, bytes_read, TCP_WRITE_FLAG_COPY);
+				auto bytes_read = this->remote_socket.async_read_some(boost::asio::buffer(remote_recv_buff_, TCP_LOCAL_RECV_BUFF_SIZE), yield[ec]);
 
-            tcp_output(original_pcb);
+				if (ec)
+				{
+					LOG_DEBUG("[{:p}] handleRemoteRead err --> {}", (void*)this, ec.message().c_str())
+						return false;
+				}
 
-        });
+				LOG_DEBUG("read {} bytes data from socks5 server", bytes_read);
+
+				//stop reading if local have no buf
+				//always check session status before call lwip tcp func
+				// pcb could be closed
+				if (status == CLOSE)
+				{
+					return false;
+				}
+				tcp_write(original_pcb, remote_recv_buff_, bytes_read, TCP_WRITE_FLAG_COPY);
+
+				tcp_output(original_pcb);
+
+				if (tcp_sndbuf(original_pcb) < TCP_LOCAL_RECV_BUFF_SIZE)
+				{
+					LOG_DEBUG("local have {} buf left stopped", tcp_sndbuf(original_pcb));
+					should_read_from_remote = false;
+					break;
+				}
+			}
+			
+		});
+		
+
+	    
     }
 
 
@@ -186,6 +212,7 @@ private:
 	boost::asio::ip::tcp::socket remote_socket;
 	unsigned char remote_recv_buff_[TCP_REMOTE_RECV_BUFF_SIZE];
 
+	bool should_read_from_remote = true;
 
 	bool openRemoteSocket()
 	{
@@ -333,27 +360,38 @@ private:
 
 		}
 
-		// Downstream Coroutine
-		boost::system::error_code ec;
+		while (1)
+		{
+			// Downstream Coroutine
+			boost::system::error_code ec;
 
-        auto bytes_read = this->remote_socket.async_read_some(boost::asio::buffer(remote_recv_buff_, TCP_LOCAL_RECV_BUFF_SIZE), yield[ec]);
+			auto bytes_read = this->remote_socket.async_read_some(boost::asio::buffer(remote_recv_buff_, TCP_LOCAL_RECV_BUFF_SIZE), yield[ec]);
 
-        if (ec)
-        {
-            LOG_DEBUG("[{:p}] handleRemoteRead err --> {}", (void*)this, ec.message().c_str())
-            return false;
-        }
+			if (ec)
+			{
+				LOG_DEBUG("[{:p}] handleRemoteRead err --> {}", (void*)this, ec.message().c_str())
+					return false;
+			}
 
-        LOG_DEBUG("read {} bytes data from socks5 server", bytes_read);
 
-        tcp_write(original_pcb, remote_recv_buff_, bytes_read, 0);
+			LOG_DEBUG("read {} bytes data from socks5 server", bytes_read);
+			//always check session status before call lwip tcp func
+			// pcb could be closed
+			if (status == CLOSE)
+			{
+				return false;
+			}
+			tcp_write(original_pcb, remote_recv_buff_, bytes_read, 0);
 
-        tcp_output(original_pcb);
+			tcp_output(original_pcb);
 
-        if (tcp_sndbuf(original_pcb) < TCP_LOCAL_RECV_BUFF_SIZE)
-        {
-            LOG_DEBUG("local have {} buf left stopped", tcp_sndbuf(original_pcb));
-        }
+			if (tcp_sndbuf(original_pcb) < TCP_LOCAL_RECV_BUFF_SIZE)
+			{
+				LOG_DEBUG("local have {} buf left stopped", tcp_sndbuf(original_pcb));
+				should_read_from_remote = false;
+				break;
+			}
+		}
 
 	}
 

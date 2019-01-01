@@ -10,6 +10,9 @@
 #include "../protocol/socks5_protocol_helper.h"
 #include "udp_session_map_def.h"
 #include <boost/asio/spawn.hpp>
+
+#include "../../tuntap/tuntaphelper.h"
+
 enum class SESSION_STATUS : char
 {
 	CLOSED = 0,
@@ -59,8 +62,10 @@ public:
 		auto self(this->shared_from_this());
 		boost::asio::spawn(this->remote_socket_.get_io_context(), [this, self](boost::asio::yield_context yield) {
 
-			if (!readFromRemote(yield)) { return; }
-
+			while (true)
+			{
+				if (!readFromRemote(yield)) { return; }
+			}
 
 		});
 	
@@ -76,17 +81,18 @@ public:
 	{
 
 		ip_udp_header_.resize(4 * (ip_header->_v_hl & 0x0f) + 8);
+
 		memcpy(&ip_udp_header_[0], ip_header, 4 * (ip_header->_v_hl & 0x0f) + 8);
+
 		auto saved_ip_header = (ip_hdr*)&ip_udp_header_[0];
 
 		// swap ip_dst && ip_src
 		auto tmp_ip = saved_ip_header->dest;
-		saved_ip_header->dest = ip_header->src;
+		saved_ip_header->dest = saved_ip_header->src;
 		saved_ip_header->src = tmp_ip;
 
 		udp_hdr *saved_udp_header = (udp_hdr *)((char *)saved_ip_header +
 			4 * (ip_header->_v_hl & 0x0f));
-		memcpy(&original_udp_header, saved_udp_header, sizeof(udp_hdr));
 
 		// swap the port
 		auto tmp_port = saved_udp_header->dest;
@@ -101,7 +107,11 @@ public:
 	void SendPacketToRemote(void* data, size_t size)
 	{
 		memcpy(remote_recv_buff_, data, size);
-
+		for (int i = 0; i < size; i++)
+		{
+			printf("%x ", ((unsigned char*)remote_recv_buff_)[i]);
+		}
+		printf("\n");
 		this->remote_socket_.async_send_to(boost::asio::buffer(remote_recv_buff_, size), boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string("127.0.0.1"), 5555), boost::bind(&UdpSession::handlerOnRemoteSent, this->shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
 
 	}
@@ -138,7 +148,6 @@ public:
 		 */
 
 	}
-
 
 
 	inline void calculateIpCheckSum(ip_hdr* ip_header)
@@ -180,7 +189,11 @@ public:
 		LOG_DEBUG("read {} bytes from remote", bytes_read);
 
 		//inject back to tun device
-
+		for (int i = 0; i < bytes_read; i++)
+		{
+			printf("%x ", remote_recv_buff_[4 + ip_udp_header_.size() - 10 + i]);
+		}
+		printf("\n");
 
 		// Get src ip and src port from socks5 udp reply
 		std::string src_ip;
@@ -188,16 +201,14 @@ public:
 		auto udp_socks5_hdr = (socks5::UDP_RELAY_PACKET*)&remote_recv_buff_[4 + ip_udp_header_.size() - 10];
 		Socks5ProtocolHelper::parseIpPortFromSocks5UdpPacket(udp_socks5_hdr, src_ip, src_port);
 
-
-
 		memcpy(&remote_recv_buff_[4], &ip_udp_header_[0], ip_udp_header_.size());
 
 		auto ip_header = (ip_hdr*)&remote_recv_buff_[4];
 
 		//debug
-		assert((ip_header->_v_hl & 0x0f) > 5);
+		//assert((ip_header->_v_hl & 0x0f) > 5);
 		//set src_ip
-		memcpy(&ip_header->src, &src_ip, 4);
+		//memcpy(&ip_header->src, &src_ip, 4);
 
 		//udp psdheader
 		auto psd_header = (udppsd_header *)&ip_header->_ttl;
@@ -218,7 +229,7 @@ public:
 
 
 		//set src_port
-		memcpy(&udp_header->src, &src_port, 2);
+		//memcpy(&udp_header->src, &src_port, 2);
 
 		// same value
 		udp_header->len = psd_header->udpl;
@@ -252,22 +263,23 @@ public:
 		ip_header->_ttl = 64;
 
 		calculateIpCheckSum(ip_header);
-
+		LOG_DEBUG("injecting {} bytes\n", (ip_header->_v_hl & 0x0f) * 4 + 8 + bytes_read);
+		TuntapHelper::GetInstance()->Inject(&remote_recv_buff_[4], (ip_header->_v_hl & 0x0f) * 4 + 8 + bytes_read - 10);
 		//tun_descriptor_.async_write_some(boost::asio::buffer(&remote_recv_buff_[4], size + 18), boost::bind(&UdpSession::handlerOnLocalSent, this->shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
-
+		return true;
 	}
 
 
 
 private:
 	SESSION_STATUS session_status_;
-	UdpSessionMap session_map_;
+	UdpSessionMap& session_map_;
 	boost::asio::ip::udp::socket remote_socket_;
 	boost::asio::ip::udp::endpoint recv_ep_;
 
 	unsigned char remote_recv_buff_[UDP_REMOTE_RECV_BUFF_SIZE];
 	std::vector<char> ip_udp_header_;
-	ip_hdr original_udp_header;
+	ip_hdr original_ip_header;
 
 	boost::asio::deadline_timer session_timer_;
 	time_t last_update_time_;

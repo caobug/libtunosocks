@@ -44,7 +44,14 @@ err_t tcp_recv_func(void *arg, struct tcp_pcb *tpcb, pbuf *p, err_t err)
 
 err_t tcp_sent_func(void *arg, struct tcp_pcb *tpcb, u16_t len)
 {
-    auto tcp_session = (TcpSession*)tpcb->callback_arg;
+	//TODO
+	if (arg == nullptr)
+	{
+		tcp_abort(tpcb);
+		return ERR_ABRT;
+	}
+    auto tcp_session = (TcpSession*)arg;
+	tcp_session->CheckReadFromRemoteStatus();
     tcp_session->ReadFromRemote();
 	printf("tcp_sent_func call, send %d len and get ack\n", len);
 	return ERR_OK;

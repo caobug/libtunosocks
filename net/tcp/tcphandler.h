@@ -39,7 +39,7 @@ public:
 		{
 			auto new_session = boost::make_shared<TcpSession>(pcb, session_map, io_context);
 			session_map.insert(std::make_pair(*pcb, new_session));
-			new_session->SetSocks5ServerEndpoint("127.0.0.1", 1080);
+			new_session->SetSocks5ServerEndpoint("127.0.0.1", 5555);
 			// socks5 server not connect yet, we have to enqueue the first packet
 			new_session->EnqueuePacket(p);
 			new_session->Start();
