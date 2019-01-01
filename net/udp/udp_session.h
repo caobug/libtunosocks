@@ -8,7 +8,8 @@
 #include <boost/bind.hpp>
 #include "../../utils/logger.h"
 #include "../protocol/socks5_protocol_helper.h"
-
+#include "udp_session_map_def.h"
+#include <boost/asio/spawn.hpp>
 enum class SESSION_STATUS : char
 {
 	CLOSED = 0,
@@ -29,20 +30,40 @@ class UdpSession : public boost::enable_shared_from_this<UdpSession>
 	};
 public:
 
-	UdpSession(boost::asio::io_context& io_context) : \
+	UdpSession(boost::asio::io_context& io_context, UdpSessionMap& map) : \
+		session_map_(map),
 		remote_socket_(io_context),
-		session_timer_(io_context),
-		remote_recv_buff_(UDP_REMOTE_RECV_BUFF_SIZE)
+		session_timer_(io_context)
 	{
 		remote_socket_.open(recv_ep_.protocol());
 		last_update_time_ = time(nullptr);
 
 	}
+
+
+	~UdpSession()
+	{
+
+
+
+	}
+
+
 	void Run()
 	{
 		session_status_ = SESSION_STATUS::RELAYING;
 		//this->session_timer_.expires_from_now(TIME_S(5));
 		//this->session_timer_.async_wait(boost::bind(&session::handlerOnTimeUp, this->shared_from_this(), boost::asio::placeholders::error));
+	
+	
+		auto self(this->shared_from_this());
+		boost::asio::spawn(this->remote_socket_.get_io_context(), [this, self](boost::asio::yield_context yield) {
+
+			if (!readFromRemote(yield)) { return; }
+
+
+		});
+	
 	}
 
 	/*
@@ -75,10 +96,16 @@ public:
 		return;
 	}
 
-	~UdpSession()
+
+
+	void SendPacketToRemote(void* data, size_t size)
 	{
+		memcpy(remote_recv_buff_, data, size);
+
+		this->remote_socket_.async_send_to(boost::asio::buffer(remote_recv_buff_, size), boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string("127.0.0.1"), 5555), boost::bind(&UdpSession::handlerOnRemoteSent, this->shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
 
 	}
+
 
 	auto& GetRemoteSocket()
 	{
@@ -90,7 +117,7 @@ public:
 		return remote_recv_buff_;
 	}
 
-	void handlerOnRemoteSent(const boost::system::error_code &ec, const size_t size, bool old_session)
+	void handlerOnRemoteSent(const boost::system::error_code &ec, const size_t size)
 	{
 		if (ec)
 		{
@@ -100,19 +127,20 @@ public:
 		}
 		LOG_DEBUG("handlerOnRemoteSent: send {} bytes to remote", size)
 
-			/*
+		/*
 
-			 the offset of remote_recv_buff_ == 4 + ip_udp_header_.size() - 10
+		 the offset of remote_recv_buff_ == 4 + ip_udp_header_.size() - 10
 
-			 4 is the psudo header ahead of the ip header
-			 10 is the udp socks5 header length
+		 4 is the psudo header ahead of the ip header
+		 10 is the udp socks5 header length
 
 
-			 */
-			if (old_session) return;
+		 */
 
-		remote_socket_.async_receive_from(boost::asio::buffer(&remote_recv_buff_[4 + ip_udp_header_.size() - 10], UDP_REMOTE_RECV_BUFF_SIZE), recv_ep_, boost::bind(&UdpSession::handlerOnRemoteRead, this->shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
 	}
+
+
+
 	inline void calculateIpCheckSum(ip_hdr* ip_header)
 	{
 		ip_header->_chksum = 0x00;
@@ -135,15 +163,21 @@ public:
 
 		return;
 	}
-	void handlerOnRemoteRead(const boost::system::error_code &ec, const size_t size)
+
+
+	bool readFromRemote(boost::asio::yield_context yield)
 	{
+		boost::system::error_code ec;
+
+		auto bytes_read = remote_socket_.async_receive_from(boost::asio::buffer(&remote_recv_buff_[4 + ip_udp_header_.size() - 10], UDP_REMOTE_RECV_BUFF_SIZE), recv_ep_, yield[ec]);
+		
 		if (ec)
 		{
 			LOG_DEBUG("handlerOnRemoteRead error -> {}", ec.message().c_str());
 			this->session_status_ = SESSION_STATUS::CLOSED;
-			return;
+			return false;
 		}
-		LOG_DEBUG("read {} bytes from remote", size);
+		LOG_DEBUG("read {} bytes from remote", bytes_read);
 
 		//inject back to tun device
 
@@ -178,7 +212,7 @@ public:
 		 there are 10 bytes socks5 ahead of udp data, so we got (size - 10 + 8)
 
 		 */
-		psd_header->udpl = htons(size - 10 + 8);
+		psd_header->udpl = htons(bytes_read - 10 + 8);
 
 		auto udp_header = (udp_hdr *)((char *)ip_header + 4 * (ip_header->_v_hl & 0x0f));
 
@@ -200,7 +234,7 @@ public:
 		 which is sizeof(udppsd_header) = 12
 
 		 */
-		auto checksum_len = sizeof(udppsd_header) + 8 + size - 10;
+		auto checksum_len = sizeof(udppsd_header) + 8 + bytes_read - 10;
 
 		// checksum unit type is short, we might paddle 0x00(byte) at the tail if it's not aligned
 		auto paddle_len = checksum_len % 2;
@@ -214,47 +248,24 @@ public:
 		udp_header->chksum = udp_checksum;
 
 
-		ip_header->_len = htons(size - 10 + 4 * (ip_header->_v_hl & 0x0f) + 8);
+		ip_header->_len = htons(bytes_read - 10 + 4 * (ip_header->_v_hl & 0x0f) + 8);
 		ip_header->_ttl = 64;
 
 		calculateIpCheckSum(ip_header);
-		/*LOG_DEBUG("from " + std::string(inet_ntoa(*(struct in_addr *) &ip_header->src)) + ":" +
-			std::to_string(ntohs(udp_header->src)));*/
-			/*
-			 *
-			 * on linux and bsd, we have to add psd ip header
-			 *
-			 * which is not needed on windows
-			 *
-			 */
-#ifdef __APPLE__
-			 // mac os
-		remote_recv_buff_[0] = 0x00;
-		remote_recv_buff_[1] = 0x00;
-		remote_recv_buff_[2] = 0x00;
-		remote_recv_buff_[3] = 0x02;
-#elif __linux__
-			 //linux
-		remote_recv_buff_[0] = 0x00;
-		remote_recv_buff_[1] = 0x00;
-		remote_recv_buff_[2] = 0x08;
-		remote_recv_buff_[3] = 0x00;
-#elif _WIN32
-			 //tun_descriptor_.async_write_some(boost::asio::buffer(&remote_recv_buff_[4], size + 18), boost::bind(&UdpSession::handlerOnLocalSent, this->shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
-		return;
-#endif
 
-		//tun_descriptor_.async_write_some(boost::asio::buffer(&remote_recv_buff_[0], size + 18 + 4), boost::bind(&UdpSession::handlerOnLocalSent, this->shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
-		return;
+		//tun_descriptor_.async_write_some(boost::asio::buffer(&remote_recv_buff_[4], size + 18), boost::bind(&UdpSession::handlerOnLocalSent, this->shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+
 	}
+
+
 
 private:
 	SESSION_STATUS session_status_;
-
+	UdpSessionMap session_map_;
 	boost::asio::ip::udp::socket remote_socket_;
 	boost::asio::ip::udp::endpoint recv_ep_;
 
-	std::vector<char> remote_recv_buff_;
+	unsigned char remote_recv_buff_[UDP_REMOTE_RECV_BUFF_SIZE];
 	std::vector<char> ip_udp_header_;
 	ip_hdr original_udp_header;
 
@@ -272,7 +283,7 @@ private:
 
 		//DVLOG(1) << DEBUG_STR("injected " + std::to_string(size) + " bytes into tun");
 
-		remote_socket_.async_receive_from(boost::asio::buffer(&remote_recv_buff_[4 + ip_udp_header_.size() - 10], UDP_REMOTE_RECV_BUFF_SIZE), recv_ep_, boost::bind(&UdpSession::handlerOnRemoteRead, this->shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+		//remote_socket_.async_receive_from(boost::asio::buffer(&remote_recv_buff_[4 + ip_udp_header_.size() - 10], UDP_REMOTE_RECV_BUFF_SIZE), recv_ep_, boost::bind(&UdpSession::handlerOnRemoteRead, this->shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
 
 
 	}

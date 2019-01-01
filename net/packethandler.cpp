@@ -5,6 +5,8 @@
 #include <lwip/ip4.h>
 #include <iostream>
 
+#include "udp/udphandler.h"
+
 const int PROTO_TCP = 6;
 const int PROTO_UDP = 17;
 const int PROTO_ICMP = 1;
@@ -12,10 +14,7 @@ const int PROTO_ICMP = 1;
 void PacketHandler::Input(void* packet, uint64_t size)
 {
 
-    //for (int i = 0; i < size; ++i) {
-    //    printf("%x ",((unsigned char*)packet)[i]);
-    //    fflush(stdout);
-    //}
+
 #if defined(__APPLE__) || defined(__linux__)
 	auto ip_header = (ip_hdr*)((char*)packet + 4);
 #elif _WIN32
@@ -23,6 +22,12 @@ void PacketHandler::Input(void* packet, uint64_t size)
 #endif
 
 	if ((ip_header->_v_hl & 0xf0) >> 4 != 0x04) {
+		return;
+	}
+
+	if (IPH_PROTO(ip_header) != PROTO_UDP)
+	{
+		UdpHandler::GetInstance()->Handle(ip_header);
 		return;
 	}
 
