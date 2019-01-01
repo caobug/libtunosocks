@@ -8,8 +8,10 @@ int main()
 	Logger::GetInstance()->InitLog();
     Logger::GetInstance()->SetLevel(spdlog::level::debug);
 	//TuntapInstaller::GetInstance()->Uninstall();
-
-	//TuntapInstaller::GetInstance()->Install();
+	if (!TuntapInstaller::GetInstance()->Find())
+	{
+		TuntapInstaller::GetInstance()->Install();
+	}
 
     auto res = Socksifier::GetInstance()->Init();
 

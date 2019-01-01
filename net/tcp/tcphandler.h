@@ -23,8 +23,8 @@ public:
 	{
 		auto res = session_map.find(*pcb);
 
-		// session should never die before
-		assert(res != session_map.end());
+		if (res == session_map.end()) return;
+
 		res->second->Stop();
 		session_map.erase(res);
 	}
@@ -39,7 +39,7 @@ public:
 		{
 			auto new_session = boost::make_shared<TcpSession>(pcb, session_map, io_context);
 			session_map.insert(std::make_pair(*pcb, new_session));
-			new_session->SetSocks5ServerEndpoint("127.0.0.1", 1086);
+			new_session->SetSocks5ServerEndpoint("127.0.0.1", 1080);
 			// socks5 server not connect yet, we have to enqueue the first packet
 			new_session->EnqueuePacket(p);
 			new_session->Start();
@@ -50,8 +50,7 @@ public:
 		if (res->second->GetSeesionStatus() == CLOSE)
 		{
 			LOG_DEBUG("session closed")
-			//release session
-			session_map.erase(res);
+			pbuf_free(p);
 			return false;
 		}
 

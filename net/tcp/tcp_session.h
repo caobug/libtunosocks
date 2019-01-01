@@ -24,18 +24,25 @@ class TcpSession : public boost::enable_shared_from_this<TcpSession>
 
 public:
 
-	TcpSession(tcp_pcb* pcb, SessionMap& session_map, boost::asio::io_context& io_context) : session_map_ref(session_map), remote_socket(io_context)
+	TcpSession(tcp_pcb* pcb, SessionMap& session_map, boost::asio::io_context& io_context) : remote_socket(io_context)
 	{
 		this->status = INIT;
 		original_pcb = pcb;
 		original_pcb->callback_arg = this;
         original_pcb_copy = *pcb;
+		LOG_DEBUG("[{}] TcpSession init with pcb [{}]", (void*)this, (void*)original_pcb);
 	}
 
 	~TcpSession()
 	{
-        original_pcb->callback_arg = nullptr;
-		LOG_DEBUG("session die!");
+        //original_pcb->callback_arg = nullptr;
+		while (!pbuf_queue.empty())
+		{
+			auto front = pbuf_queue.front();
+			pbuf_queue.pop();
+			pbuf_free(front);
+		}
+		LOG_DEBUG("[{}] session die, pcb [{}]", (void*)this, (void*)original_pcb);
 	}
 
 
@@ -71,7 +78,13 @@ public:
 	    if (status == CLOSE) return;
 	    this->remote_socket.cancel();
 	    this->status = CLOSE;
+		original_pcb->callback_arg = nullptr;
     }
+
+	tcp_pcb* GetPcb()
+	{
+		return original_pcb;
+	}
 
     tcp_pcb GetPcbCopy()
     {
@@ -88,7 +101,8 @@ public:
 	void ProxyTcpPacket(pbuf* p)
 	{
 		EnqueuePacket(p);
-		assert(this->status != CLOSE);
+		//assert(this->status != CLOSE);
+		// if not connected to socks5 server return  
 		if (this->status != RELAYING) return;
 
 		while (!pbuf_queue.empty())
@@ -101,15 +115,14 @@ public:
 			async_write(this->remote_socket, boost::asio::buffer(front->payload, front->tot_len),
 				boost::bind(&TcpSession::handlerOnRemoteSend,
 					shared_from_this(),
-					boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+					boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred, front));
 
-			//pbuf_free(p);
 
 		}
 
 	}
 
-	void handlerOnRemoteSend(const boost::system::error_code &ec, const size_t &size)
+	void handlerOnRemoteSend(const boost::system::error_code &ec, const size_t &size, pbuf* p)
 	{
 		if (ec)
 		{
@@ -119,6 +132,8 @@ public:
 
 		tcp_recved(original_pcb, size);
 		LOG_DEBUG("send {} bytes to socks5 server", size)
+
+		pbuf_free(p);
 	}
 
 	inline auto GetSeesionStatus()
@@ -164,7 +179,6 @@ private:
 
     tcp_pcb* original_pcb;
     tcp_pcb original_pcb_copy;
-	SessionMap& session_map_ref;
 
 	std::queue<pbuf*> pbuf_queue;
 
@@ -296,7 +310,8 @@ private:
 
 			auto front = pbuf_queue.front();
 			pbuf_queue.pop();
-
+			
+			assert(front->len == front->tot_len);
 			auto bytes_write = async_write(this->remote_socket, boost::asio::buffer(front->payload, front->tot_len), yield[ec]);
 
 			if (ec)
@@ -304,8 +319,15 @@ private:
 				LOG_DEBUG("[{:p}] handleRemoteRead-->async_write err --> {}", (void*)this, ec.message().c_str())
 				return false;
 			}
+			pbuf_free(front);
 
-			tcp_recved(original_pcb, front->len);
+			//always check session status before call lwip tcp func
+			// pcb could be closed
+			if (status == CLOSE)
+			{
+				return false;
+			}
+			tcp_recved(original_pcb, bytes_write);
 
 			LOG_DEBUG("send {} bytes data to socks5 server", bytes_write);
 
@@ -328,7 +350,6 @@ private:
 
         tcp_output(original_pcb);
 
-        //stop reading if local have no buf
         if (tcp_sndbuf(original_pcb) < TCP_LOCAL_RECV_BUFF_SIZE)
         {
             LOG_DEBUG("local have {} buf left stopped", tcp_sndbuf(original_pcb));
