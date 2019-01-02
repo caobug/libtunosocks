@@ -76,17 +76,22 @@ IF (WIN32)
 ENDIF()
 set_target_properties(libtun2socks PROPERTIES PREFIX "")
 
-IF (APPLE)
+IF (CMAKE_SYSTEM_NAME MATCHES "Darwin")
 include_directories("/Users/mario/Documents/spdlog-1.2.1/include")
+ENDIF()
 
+IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
+    include_directories("/home/spdlog-1.2.1/include")
+ENDIF()
 
-set(Boost_USE_STATIC_LIBS ON)
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost 1.68.0 REQUIRED system  coroutine context regex thread)
+IF (NOT WIN32)
+    set(Boost_USE_STATIC_LIBS ON)
+    set(Boost_USE_MULTITHREADED ON)
+    set(Boost_USE_STATIC_RUNTIME OFF)
+    find_package(Boost 1.68.0 REQUIRED system  coroutine context regex thread)
 
 IF (Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
     target_link_libraries(libtun2socks ${Boost_LIBRARIES})
 ENDIF ()
-ENDIF()
+
