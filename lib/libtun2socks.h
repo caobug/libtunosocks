@@ -1,13 +1,11 @@
 #pragma once
 
+#include <string>
+
 #if defined(BUILD_DLL) && defined(_WIN32)
 #define OS_Dll_API   __declspec( dllexport )
 #else
-#ifdef _WIN32
-#define OS_Dll_API   __declspec( dllimport )
-#else
 #define OS_Dll_API
-#endif
 #endif
 
 class OS_Dll_API LibTun2Socks {
