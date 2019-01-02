@@ -23,6 +23,10 @@ public:
     static int BlockIp(std::string ip);
     static int BlockIp(uint16_t ASN);
 
+#ifdef _WIN32
+	static bool InstallTunDevice();
+	static bool UninstallTunDevice();
+#endif
     static void ResetNetwork();
 
 };
