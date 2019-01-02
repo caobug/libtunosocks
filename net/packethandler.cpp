@@ -25,12 +25,12 @@ void PacketHandler::Input(void* packet, uint64_t size)
 		return;
 	}
 
-	//if (IPH_PROTO(ip_header) == PROTO_UDP)
-	//{
-	//	UdpHandler::GetInstance()->Handle(ip_header);
-	//	return;
-	//}
-	//
+	if (IPH_PROTO(ip_header) == PROTO_UDP)
+	{
+		UdpHandler::GetInstance()->Handle(ip_header);
+		return;
+	}
+
 	if (IPH_PROTO(ip_header) != PROTO_TCP
 		&& IPH_PROTO(ip_header) != PROTO_UDP
 		&& IPH_PROTO(ip_header) != PROTO_ICMP) return;
