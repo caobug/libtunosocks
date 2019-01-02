@@ -1,6 +1,6 @@
 #include "libtun2socks.h"
 
-
+#include "../net/socksifier.h"
 
 
 int LibTun2Socks::AsyncRun(std::string socks5_ip, uint16_t socks5_port)
