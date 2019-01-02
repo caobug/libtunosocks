@@ -90,8 +90,8 @@ IF (NOT WIN32)
     set(Boost_USE_STATIC_RUNTIME OFF)
     find_package(Boost 1.68.0 REQUIRED system  coroutine context regex thread)
 
-IF (Boost_FOUND)
-    include_directories(${Boost_INCLUDE_DIRS})
-    target_link_libraries(libtun2socks ${Boost_LIBRARIES})
-ENDIF ()
-
+    IF (Boost_FOUND)
+        include_directories(${Boost_INCLUDE_DIRS})
+        target_link_libraries(libtun2socks ${Boost_LIBRARIES})
+    ENDIF ()
+ENDIF()
