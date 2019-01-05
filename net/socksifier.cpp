@@ -10,6 +10,8 @@
 
 #include "packethandler.h"
 
+#include "socks5server_info.h"
+
 #define TUN_RECV_COROUTINE \
 auto self(GetInstance()); \
 boost::asio::spawn([this, self](boost::asio::yield_context yield) {  boost::system::error_code ec; auto packet_handler = PacketHandler::GetInstance(); \
@@ -47,10 +49,12 @@ void Socksifier::SetSocks5Host(std::string ip, uint16_t port)
 {
 
 }
+
 void Socksifier::GetSocks5Host(std::string& ip, uint16_t& port)
 {
 
 }
+
 void Socksifier::AsyncRun()
 {
 	TUN_RECV_COROUTINE

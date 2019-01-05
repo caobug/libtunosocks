@@ -34,9 +34,6 @@ public:
 
 	bool Init();
 
-	void SetSocks5Host(std::string ip, std::string port);
-	void GetSocks5Host(std::string ip, std::string port);
-
 	void AsyncRun();
 
 	void Stop();
