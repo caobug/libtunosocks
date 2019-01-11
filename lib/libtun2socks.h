@@ -28,6 +28,7 @@ public:
 	static bool InstallTunDevice();
 	static bool UninstallTunDevice();
 #endif
+	
     static void ResetNetwork();
 
 };

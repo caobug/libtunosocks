@@ -74,6 +74,7 @@ public:
 
 	}
 
+	//never call Stop within session, it should be controlled by lwip cb
 	void Stop()
     {
 	    if (status == CLOSE) return;
@@ -143,17 +144,19 @@ public:
 	}
 
 
-	void CheckReadFromRemoteStatus()
+	bool IsRemoteReadable()
 	{
-		if (tcp_sndbuf(original_pcb) > TCP_LOCAL_RECV_BUFF_SIZE)
-			should_read_from_remote = true;
-		return;
+		return tcp_sndbuf(original_pcb) > 2 * TCP_LOCAL_RECV_BUFF_SIZE;
 	}
+
 
 	void ReadFromRemote()
     {
 
+		//return if ReadFromRemote is called
 		if (should_read_from_remote) return;
+
+		should_read_from_remote = true;
 
 		auto self(this->shared_from_this());
 		boost::asio::spawn(this->remote_socket.get_io_context(), [this, self](boost::asio::yield_context yield) {
@@ -388,10 +391,17 @@ private:
 
 			tcp_output(original_pcb);
 
-			if (tcp_sndbuf(original_pcb) < TCP_LOCAL_RECV_BUFF_SIZE)
+			/*
+			 * if send buf not enough(local not send ack yet),
+			 * stop reading from remote until ack receive
+			 */
+			if (tcp_sndbuf(original_pcb) < 2 * TCP_LOCAL_RECV_BUFF_SIZE)
 			{
 				LOG_DEBUG("local have {} buf left stopped", tcp_sndbuf(original_pcb));
 				should_read_from_remote = false;
+
+				//read loop is broken
+				//call ReadFromRemote() when receive ack (tcp_sent_func)
 				break;
 			}
 		}

@@ -42,17 +42,22 @@ err_t tcp_recv_func(void *arg, struct tcp_pcb *tpcb, pbuf *p, err_t err)
 	return ERR_OK;
 }
 
+//call when packet send to local and recv ack
 err_t tcp_sent_func(void *arg, struct tcp_pcb *tpcb, u16_t len)
 {
-	//TODO
+	//if Stop() is called and session is already deleted
 	if (arg == nullptr)
 	{
 		tcp_abort(tpcb);
 		return ERR_ABRT;
 	}
+
     auto tcp_session = (TcpSession*)arg;
-	tcp_session->CheckReadFromRemoteStatus();
-    tcp_session->ReadFromRemote();
+
+
+	if (tcp_session->IsRemoteReadable())
+		tcp_session->ReadFromRemote();
+
 	printf("tcp_sent_func call, send %d len and get ack\n", len);
 	return ERR_OK;
 }
