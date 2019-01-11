@@ -6,7 +6,7 @@
 
 bool SetSocks5Server(std::string ip, uint16_t port)
 {
-	Socks5ServerInfo::GetInstance()->Set(ip, port);
+	return 0;
 }
 bool LibTun2Socks::AsyncRun()
 {

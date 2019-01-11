@@ -186,14 +186,14 @@ public:
 			this->session_status_ = SESSION_STATUS::CLOSED;
 			return false;
 		}
-		LOG_DEBUG("read {} bytes from remote", bytes_read);
+		LOG_DEBUG("UDP read {} bytes from remote", bytes_read);
 
 		//inject back to tun device
-		for (int i = 0; i < bytes_read; i++)
+		/*for (int i = 0; i < bytes_read; i++)
 		{
 			printf("%x ", remote_recv_buff_[4 + ip_udp_header_.size() - 10 + i]);
 		}
-		printf("\n");
+		printf("\n");*/
 
 		// Get src ip and src port from socks5 udp reply
 		std::string src_ip;

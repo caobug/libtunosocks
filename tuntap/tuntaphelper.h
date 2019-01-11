@@ -15,7 +15,7 @@ public:
 
     void Inject(void *data, size_t size) {
 
-		printf("[void* data] injecting %zu bytes\n", size);
+		//printf("[void* data] injecting %zu bytes\n", size);
 
         boost::asio::async_write(Socksifier::GetInstance()->GetTunSocket(),
                 boost::asio::buffer(data, size),
@@ -26,7 +26,7 @@ public:
 
     void Inject(pbuf* p) {
 
-		printf("[pbuf* p] injecting %zu bytes\n", p->tot_len);
+		//printf("[pbuf* p] injecting %zu bytes\n", p->tot_len);
 
         boost::asio::async_write(Socksifier::GetInstance()->GetTunSocket(),
                                  boost::asio::buffer(p->payload, p->len),

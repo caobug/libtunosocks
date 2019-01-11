@@ -45,15 +45,6 @@ bool Socksifier::Init()
 	return true;
 }
 
-void Socksifier::SetSocks5Host(std::string ip, uint16_t port)
-{
-
-}
-
-void Socksifier::GetSocks5Host(std::string& ip, uint16_t& port)
-{
-
-}
 
 void Socksifier::AsyncRun()
 {

@@ -55,6 +55,7 @@ public:
 
 	void Start()
 	{
+		//return if we can't open sockset
 		if (!openRemoteSocket())
 		{
 			this->status = CLOSE;
@@ -308,7 +309,7 @@ private:
 			return false;
 		}
 
-		LOG_DEBUG("send {} bytes socks5 request", bytes_write);
+		//LOG_DEBUG("send {} bytes socks5 request", bytes_write);
 
 		uint64_t bytes_read = boost::asio::async_read(this->remote_socket, boost::asio::buffer(remote_recv_buff_, 10), yield[ec]);
 
@@ -318,19 +319,20 @@ private:
 			return false;
 		}
 
-		LOG_DEBUG("recv {} bytes socks5 reply", bytes_write);
+		//LOG_DEBUG("recv {} bytes socks5 reply", bytes_write);
 
 		//check reply 0x05 0x00 0x00 0x01 // little endian
 		if (*(int*)remote_recv_buff_ != 16777221) return false;
 		return true;
 	}
 
-
+	
 	bool handleRemoteRead(boost::asio::yield_context& yield)
 	{
+		//set session status to RELAYING when socks5 handshake finish
 		this->status = RELAYING;
 
-		//send first packet(s)
+		//local might send some packetd while session is handshaking with socks5 server 
 		while (!pbuf_queue.empty())
 		{
 			boost::system::error_code ec;
@@ -348,8 +350,8 @@ private:
 			}
 			pbuf_free(front);
 
-			//always check session status before call lwip tcp func
-			// pcb could be closed
+			// always check session status before call lwip tcp func
+			// pcb could be closed by local
 			if (status == CLOSE)
 			{
 				return false;
@@ -360,9 +362,9 @@ private:
 
 		}
 
+		// Downstream Coroutine
 		while (1)
 		{
-			// Downstream Coroutine
 			boost::system::error_code ec;
 
 			auto bytes_read = this->remote_socket.async_read_some(boost::asio::buffer(remote_recv_buff_, TCP_LOCAL_RECV_BUFF_SIZE), yield[ec]);
@@ -375,8 +377,9 @@ private:
 
 
 			LOG_DEBUG("read {} bytes data from socks5 server", bytes_read);
-			//always check session status before call lwip tcp func
-			// pcb could be closed
+
+			// always check session status before call lwip tcp func
+			// pcb could be closed by local
 			if (status == CLOSE)
 			{
 				return false;

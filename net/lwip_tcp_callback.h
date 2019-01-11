@@ -17,21 +17,21 @@
  */
 err_t tcp_recv_func(void *arg, struct tcp_pcb *tpcb, pbuf *p, err_t err)
 {
-	//if closed
+	//if local close the connection, recv fin
 	if (!p)
 	{
-		//printf("tcp close ? p == null\n");
 		assert(tpcb->state == CLOSE_WAIT);
+		// send fin back
 		tcp_close(tpcb);
 		TcpHandler::GetInstance()->Clear(tpcb);
 		return ERR_OK;
 	}
 
 	assert(p->len == p->tot_len);
-	printf("tcp_recv_func call, pcb state: %d, read %hu bytes\n", tpcb->state, p->tot_len);
+	LOG_DEBUG("tcp_recv_func call, pcb state: {}, read {} bytes", tpcb->state, p->tot_len);
 
-	// !res means packet is rejected cause session is closed
-	// life of p is Handle()'s responsibility
+	// !res means packet is rejected cause session is already closed
+	// life of p is controlled by Handle()
 	auto res = TcpHandler::GetInstance()->Handle(tpcb, p);
 	if (!res)
 	{
