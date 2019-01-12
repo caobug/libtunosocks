@@ -54,14 +54,6 @@ public:
 
 		auto udp_header = reinterpret_cast<udp_hdr *>((char *)ip_header + 4 * (ip_header->_v_hl & 0x0f));
 
-		//DVLOG(1)
-		//	<< this->DEBUG_STR("udp packet From " + std::string(inet_ntoa(*(struct in_addr *) &ip_header->src)) + ":" +
-		//		std::to_string(ntohs(udp_hdr->src)));
-		//DVLOG(1) << this->DEBUG_STR("-> to " + std::string(inet_ntoa(*(struct in_addr *) &ip_header->dest)) + ":" +
-		//	std::to_string(ntohs(udp_hdr->dest)));
-		//DVLOG(1) << this->DEBUG_STR("packet size: " + std::to_string(ntohs(udp_hdr->len)));
-
-
 		/*
 
 		 The length of UDP_RELAY_PACKET is 10
@@ -84,6 +76,7 @@ public:
 
 		auto res = udp_session_map_.find(*udp_header);
 
+		//new session
 		if (res == udp_session_map_.end())
 		{
 
@@ -93,8 +86,7 @@ public:
 			new_session->SetNatInfo(ip_header);
 			// generate standard udp socks5 header
 			Socks5ProtocolHelper::ConstructSocks5UdpPacketFromIpStringAndPort((unsigned char*)socks5_udp_packet, ip4addr_ntoa((ip4_addr_t*)&ip_header->dest), udp_header->dest);
-			
-			
+
 			new_session->SendPacketToRemote((void*)socks5_udp_packet, send_length);
 
 			new_session->Run();

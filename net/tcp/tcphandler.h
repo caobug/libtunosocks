@@ -47,7 +47,7 @@ public:
 		}
 
 		// old session
-		if (res->second->GetSeesionStatus() == CLOSE)
+		if (res->second->GetSeesionStatus() == SESSION_CLOSE)
 		{
 			LOG_DEBUG("session closed")
 			pbuf_free(p);

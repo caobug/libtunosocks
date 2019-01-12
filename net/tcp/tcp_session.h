@@ -13,10 +13,11 @@
 
 enum TcpSessionStatus
 {
-	INIT,
-	HANDSHAKING,
-	RELAYING,
-	CLOSE
+	SESSION_INIT,
+	SESSION_HANDSHAKING,
+	SESSION_RELAYING,
+	SESSION_CLOSING,
+	SESSION_CLOSE
 };
 
 class TcpSession : public boost::enable_shared_from_this<TcpSession>
@@ -26,7 +27,7 @@ public:
 
 	TcpSession(tcp_pcb* pcb, SessionMap& session_map, boost::asio::io_context& io_context) : remote_socket(io_context)
 	{
-		this->status = INIT;
+		this->status = SESSION_INIT;
 		original_pcb = pcb;
 		original_pcb->callback_arg = this;
         original_pcb_copy = *pcb;
@@ -35,7 +36,6 @@ public:
 
 	~TcpSession()
 	{
-        //original_pcb->callback_arg = nullptr;
 		while (!pbuf_queue.empty())
 		{
 			auto front = pbuf_queue.front();
@@ -48,9 +48,7 @@ public:
 
 	void SetSocks5ServerEndpoint(std::string ip, uint16_t port)
 	{
-
 		remote_ep = boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string(ip),port);
-
 	}
 
 	void Start()
@@ -58,17 +56,17 @@ public:
 		//return if we can't open sockset
 		if (!openRemoteSocket())
 		{
-			this->status = CLOSE;
+			this->status = SESSION_CLOSE;
 			return;
 		}
 
 		auto self(this->shared_from_this());
 		boost::asio::spawn(this->remote_socket.get_io_context(), [this, self](boost::asio::yield_context yield) {
 
-			if (!connectToRemote(yield)) { this->status = CLOSE; return; }
-			if (!handleMethodSelection(yield)) { this->status = CLOSE; return; }
-			if (!handleSocks5Request(yield)) { this->status = CLOSE; return; }
-			if (!handleRemoteRead(yield)) { this->status = CLOSE; return; }
+			if (!connectToRemote(yield)) { this->status = SESSION_CLOSE; return; }
+			if (!handleMethodSelection(yield)) { this->status = SESSION_CLOSE; return; }
+			if (!handleSocks5Request(yield)) { this->status = SESSION_CLOSE; return; }
+			if (!handleRemoteRead(yield)) { this->status = SESSION_CLOSE; return; }
 
 		});
 
@@ -77,9 +75,9 @@ public:
 	//never call Stop within session, it should be controlled by lwip cb
 	void Stop()
     {
-	    if (status == CLOSE) return;
+	    if (status == SESSION_CLOSE) return;
 	    this->remote_socket.cancel();
-	    this->status = CLOSE;
+	    this->status = SESSION_CLOSE;
 		original_pcb->callback_arg = nullptr;
     }
 
@@ -102,10 +100,11 @@ public:
 	// check session status before calling ProxyTcpPacket
 	void ProxyTcpPacket(pbuf* p)
 	{
+		//it won't enqueue infinite packet cause it's limited by the recv_wnd
 		EnqueuePacket(p);
-		//assert(this->status != CLOSE);
+		//assert(this->status != SESSION_CLOSE);
 		// if not connected to socks5 server return  
-		if (this->status != RELAYING) return;
+		if (this->status != SESSION_RELAYING) return;
 
 		while (!pbuf_queue.empty())
 		{
@@ -128,7 +127,7 @@ public:
 	{
 		if (ec)
 		{
-			this->status == CLOSE;
+			this->status == SESSION_CLOSE;
 			return;
 		}
 
@@ -172,23 +171,23 @@ public:
 				if (ec)
 				{
 					LOG_DEBUG("[{:p}] handleRemoteRead err --> {}", (void*)this, ec.message().c_str())
-						return false;
+					return false;
 				}
 
 				LOG_DEBUG("read {} bytes data from socks5 server", bytes_read);
 
-				//stop reading if local have no buf
-				//always check session status before call lwip tcp func
+				// stop reading if local have no buf
+				// always check session status before call lwip tcp func
 				// pcb could be closed
-				if (status == CLOSE)
+				if (status == SESSION_CLOSE)
 				{
 					return false;
 				}
-				tcp_write(original_pcb, remote_recv_buff_, bytes_read, TCP_WRITE_FLAG_COPY);
+				tcp_write(original_pcb, remote_recv_buff_, bytes_read, 0);
 
 				tcp_output(original_pcb);
 
-				if (tcp_sndbuf(original_pcb) < TCP_LOCAL_RECV_BUFF_SIZE)
+				if (tcp_sndbuf(original_pcb) < 2 * TCP_LOCAL_RECV_BUFF_SIZE)
 				{
 					LOG_DEBUG("local have {} buf left stopped", tcp_sndbuf(original_pcb));
 					should_read_from_remote = false;
@@ -272,7 +271,7 @@ private:
 
 	bool handleMethodSelection(boost::asio::yield_context& yield)
 	{
-		this->status = HANDSHAKING;
+		this->status = SESSION_HANDSHAKING;
 
 		boost::system::error_code ec;
 
@@ -333,7 +332,7 @@ private:
 	bool handleRemoteRead(boost::asio::yield_context& yield)
 	{
 		//set session status to RELAYING when socks5 handshake finish
-		this->status = RELAYING;
+		this->status = SESSION_RELAYING;
 
 		//local might send some packetd while session is handshaking with socks5 server 
 		while (!pbuf_queue.empty())
@@ -355,7 +354,7 @@ private:
 
 			// always check session status before call lwip tcp func
 			// pcb could be closed by local
-			if (status == CLOSE)
+			if (status == SESSION_CLOSE)
 			{
 				return false;
 			}
@@ -383,7 +382,7 @@ private:
 
 			// always check session status before call lwip tcp func
 			// pcb could be closed by local
-			if (status == CLOSE)
+			if (status == SESSION_CLOSE)
 			{
 				return false;
 			}

@@ -71,6 +71,7 @@ void tcp_err_func(void *arg, err_t err)
 		printf("tcp_err_func err %d \n", err);
 	*/
 	//assert(arg != nullptr);
+	//arg == nullptr means that Stop() of that session is called by other cb
 	if (arg == nullptr) return;
 	auto tcp_session = (TcpSession*)arg;
 	auto pcb_copy = tcp_session->GetPcbCopy();

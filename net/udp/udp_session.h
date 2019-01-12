@@ -3,6 +3,7 @@
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/asio.hpp>
 #include "../bufferdef.h"
+#include <lwip/pbuf.h>
 #include <lwip/ip.h>
 #include <lwip/udp.h>
 #include <boost/bind.hpp>
@@ -57,8 +58,7 @@ public:
 		session_status_ = SESSION_STATUS::RELAYING;
 		//this->session_timer_.expires_from_now(TIME_S(5));
 		//this->session_timer_.async_wait(boost::bind(&session::handlerOnTimeUp, this->shared_from_this(), boost::asio::placeholders::error));
-	
-	
+
 		auto self(this->shared_from_this());
 		boost::asio::spawn(this->remote_socket_.get_io_context(), [this, self](boost::asio::yield_context yield) {
 
@@ -102,17 +102,15 @@ public:
 		return;
 	}
 
-
-
+    //multiple call
 	void SendPacketToRemote(void* data, size_t size)
 	{
-		memcpy(remote_recv_buff_, data, size);
-		for (int i = 0; i < size; i++)
-		{
-			printf("%x ", ((unsigned char*)remote_recv_buff_)[i]);
-		}
-		printf("\n");
-		this->remote_socket_.async_send_to(boost::asio::buffer(remote_recv_buff_, size), boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string("127.0.0.1"), 5555), boost::bind(&UdpSession::handlerOnRemoteSent, this->shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+        auto p = pbuf_alloc(PBUF_RAW, size, PBUF_RAM);
+        if (ERR_OK != pbuf_take(p, data, size)) {
+
+            return;
+        }
+		this->remote_socket_.async_send_to(boost::asio::buffer(p->payload, p->tot_len), boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string("127.0.0.1"), 5555), boost::bind(&UdpSession::handlerOnRemoteSent, this->shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred, p));
 
 	}
 
@@ -127,7 +125,7 @@ public:
 		return remote_recv_buff_;
 	}
 
-	void handlerOnRemoteSent(const boost::system::error_code &ec, const size_t size)
+	void handlerOnRemoteSent(const boost::system::error_code &ec, const size_t size, pbuf* p)
 	{
 		if (ec)
 		{
