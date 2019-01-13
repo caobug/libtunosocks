@@ -28,7 +28,7 @@ err_t tcp_recv_func(void *arg, struct tcp_pcb *tpcb, pbuf *p, err_t err)
 	}
 
 	assert(p->len == p->tot_len);
-	LOG_DEBUG("tcp_recv_func call, pcb state: {}, read {} bytes", tpcb->state, p->tot_len);
+	//LOG_DEBUG("tcp_recv_func call, pcb state: {}, read {} bytes", tpcb->state, p->tot_len);
 
 	// !res means packet is rejected cause session is already closed
 	// life of p is controlled by Handle()
@@ -58,7 +58,7 @@ err_t tcp_sent_func(void *arg, struct tcp_pcb *tpcb, u16_t len)
 	if (tcp_session->IsRemoteReadable())
 		tcp_session->ReadFromRemote();
 
-	printf("tcp_sent_func call, send %d len and get ack\n", len);
+	//printf("tcp_sent_func call, send %d len and get ack\n", len);
 	return ERR_OK;
 }
 

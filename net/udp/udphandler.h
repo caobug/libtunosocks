@@ -81,10 +81,14 @@ public:
 		{
 
 			auto new_session = boost::make_shared<UdpSession>(io_context, udp_session_map_);
+			new_session->SetSocks5ServerEndpoint("127.0.0.1", 5555);
+
 			udp_session_map_.insert(std::make_pair(*udp_header, new_session));
 
 			new_session->SetNatInfo(ip_header);
 			// generate standard udp socks5 header
+			LOG_INFO("[{}] new udp send to: {}:{}", (void*)new_session.get(), ip4addr_ntoa((ip4_addr_t*)&ip_header->dest), lwip_htons(udp_header->dest));
+
 			Socks5ProtocolHelper::ConstructSocks5UdpPacketFromIpStringAndPort((unsigned char*)socks5_udp_packet, ip4addr_ntoa((ip4_addr_t*)&ip_header->dest), udp_header->dest);
 
 			new_session->SendPacketToRemote((void*)socks5_udp_packet, send_length);
@@ -95,11 +99,12 @@ public:
 		else
 		{
 
-			//auto session_ptr = boost::static_pointer_cast<session>(res->second);
+			auto session_ptr = boost::static_pointer_cast<UdpSession>(res->second);
+			LOG_INFO("[{}] old udp send to: {}:{}", (void*)session_ptr.get(), ip4addr_ntoa((ip4_addr_t*)&ip_header->dest), lwip_htons(udp_header->dest));
 
-			//GenSocks5UdpPacket(socks5_udp_packet, ip_header->dest, udp_hdr->dest);
+			Socks5ProtocolHelper::ConstructSocks5UdpPacketFromIpStringAndPort((unsigned char*)socks5_udp_packet, ip4addr_ntoa((ip4_addr_t*)&ip_header->dest), udp_header->dest);
 
-			//session_ptr->GetRemoteSocket().async_send_to(boost::asio::buffer(socks5_udp_packet, send_length), boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(globalconfig_.GetSocks5HostName()), globalconfig_.GetSocks5HostPort()), boost::bind(&session::handlerOnRemoteSent, session_ptr->shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred, true));
+			session_ptr->SendPacketToRemote((void*)socks5_udp_packet, send_length);
 
 		}
 	}

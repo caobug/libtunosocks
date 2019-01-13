@@ -16,7 +16,6 @@ enum TcpSessionStatus
 	SESSION_INIT,
 	SESSION_HANDSHAKING,
 	SESSION_RELAYING,
-	SESSION_CLOSING,
 	SESSION_CLOSE
 };
 
@@ -42,7 +41,7 @@ public:
 			pbuf_queue.pop();
 			pbuf_free(front);
 		}
-		LOG_DEBUG("[{}] session die, pcb [{}]", (void*)this, (void*)original_pcb);
+		//LOG_DEBUG("[{}] session die, pcb [{}]", (void*)this, (void*)original_pcb);
 	}
 
 
@@ -131,8 +130,12 @@ public:
 			return;
 		}
 
+		if (status == SESSION_CLOSE)
+		{
+			return;
+		}
 		tcp_recved(original_pcb, size);
-		LOG_DEBUG("send {} bytes to socks5 server", size)
+		//LOG_DEBUG("send {} bytes to socks5 server", size)
 
 		pbuf_free(p);
 	}
@@ -174,7 +177,7 @@ public:
 					return false;
 				}
 
-				LOG_DEBUG("read {} bytes data from socks5 server", bytes_read);
+				//LOG_DEBUG("read {} bytes data from socks5 server", bytes_read);
 
 				// stop reading if local have no buf
 				// always check session status before call lwip tcp func
@@ -189,7 +192,7 @@ public:
 
 				if (tcp_sndbuf(original_pcb) < 2 * TCP_LOCAL_RECV_BUFF_SIZE)
 				{
-					LOG_DEBUG("local have {} buf left stopped", tcp_sndbuf(original_pcb));
+					//LOG_DEBUG("local have {} buf left stopped", tcp_sndbuf(original_pcb));
 					should_read_from_remote = false;
 					break;
 				}
@@ -378,7 +381,7 @@ private:
 			}
 
 
-			LOG_DEBUG("read {} bytes data from socks5 server", bytes_read);
+			//LOG_DEBUG("read {} bytes data from socks5 server", bytes_read);
 
 			// always check session status before call lwip tcp func
 			// pcb could be closed by local
@@ -396,7 +399,7 @@ private:
 			 */
 			if (tcp_sndbuf(original_pcb) < 2 * TCP_LOCAL_RECV_BUFF_SIZE)
 			{
-				LOG_DEBUG("local have {} buf left stopped", tcp_sndbuf(original_pcb));
+				//LOG_DEBUG("local have {} buf left stopped", tcp_sndbuf(original_pcb));
 				should_read_from_remote = false;
 
 				//read loop is broken

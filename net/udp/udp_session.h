@@ -86,6 +86,9 @@ public:
 
 		auto saved_ip_header = (ip_hdr*)&ip_udp_header_[0];
 
+		auto dst = std::string(inet_ntoa(*(in_addr*)&saved_ip_header->dest));
+		auto src = std::string(inet_ntoa(*(in_addr*)&saved_ip_header->src));
+
 		// swap ip_dst && ip_src
 		auto tmp_ip = saved_ip_header->dest;
 		saved_ip_header->dest = saved_ip_header->src;
@@ -102,6 +105,11 @@ public:
 		return;
 	}
 
+	void SetSocks5ServerEndpoint(std::string ip, uint16_t port)
+	{
+		recv_ep_ = boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string(ip), port);
+	}
+
     //multiple call
 	void SendPacketToRemote(void* data, size_t size)
 	{
@@ -110,7 +118,10 @@ public:
 
             return;
         }
-		this->remote_socket_.async_send_to(boost::asio::buffer(p->payload, p->tot_len), boost::asio::ip::udp::endpoint(boost::asio::ip::address::from_string("127.0.0.1"), 5555), boost::bind(&UdpSession::handlerOnRemoteSent, this->shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred, p));
+
+		assert(size == p->tot_len);
+
+		this->remote_socket_.async_send_to(boost::asio::buffer(p->payload, p->tot_len), recv_ep_, boost::bind(&UdpSession::handlerOnRemoteSent, this->shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred, p));
 
 	}
 
@@ -135,15 +146,7 @@ public:
 		}
 		LOG_DEBUG("handlerOnRemoteSent: send {} bytes to remote", size)
 
-		/*
-
-		 the offset of remote_recv_buff_ == 4 + ip_udp_header_.size() - 10
-
-		 4 is the psudo header ahead of the ip header
-		 10 is the udp socks5 header length
-
-
-		 */
+		pbuf_free(p);
 
 	}
 
@@ -175,8 +178,7 @@ public:
 	bool readFromRemote(boost::asio::yield_context yield)
 	{
 		boost::system::error_code ec;
-
-		auto bytes_read = remote_socket_.async_receive_from(boost::asio::buffer(&remote_recv_buff_[4 + ip_udp_header_.size() - 10], UDP_REMOTE_RECV_BUFF_SIZE), recv_ep_, yield[ec]);
+		auto bytes_read = remote_socket_.async_receive_from(boost::asio::buffer(&remote_recv_buff_[4 + ip_udp_header_.size() - 10], UDP_REMOTE_RECV_BUFF_SIZE - 4 - 10 - ip_udp_header_.size()), recv_ep_, yield[ec]);
 		
 		if (ec)
 		{
@@ -184,7 +186,7 @@ public:
 			this->session_status_ = SESSION_STATUS::CLOSED;
 			return false;
 		}
-		LOG_DEBUG("UDP read {} bytes from remote", bytes_read);
+		LOG_INFO("UDP read {} bytes from remote", bytes_read);
 
 		//inject back to tun device
 		/*for (int i = 0; i < bytes_read; i++)
@@ -199,18 +201,27 @@ public:
 		auto udp_socks5_hdr = (socks5::UDP_RELAY_PACKET*)&remote_recv_buff_[4 + ip_udp_header_.size() - 10];
 		Socks5ProtocolHelper::parseIpPortFromSocks5UdpPacket(udp_socks5_hdr, src_ip, src_port);
 
+		auto src_ip_uint32 = inet_addr(src_ip.c_str());
+
+		//return if ip err
+		if (src_ip_uint32 == INADDR_NONE) return true;
+
+		LOG_INFO("[{}] udp remote from ep: {}:{}", (void*)this, src_ip.c_str(), src_port);
+
 		memcpy(&remote_recv_buff_[4], &ip_udp_header_[0], ip_udp_header_.size());
 
 		auto ip_header = (ip_hdr*)&remote_recv_buff_[4];
-
+		
 		//debug
 		//assert((ip_header->_v_hl & 0x0f) > 5);
 		//set src_ip
-		//memcpy(&ip_header->src, &src_ip, 4);
+		//auto ip_uint32 = inet_addr(src_ip.c_str());
+		memcpy(&ip_header->src, &src_ip_uint32, 4);
 
 		//udp psdheader
 		auto psd_header = (udppsd_header *)&ip_header->_ttl;
 
+		auto saved_mbz = psd_header->mbz;
 		psd_header->mbz = 0x00;
 
 
@@ -221,13 +232,12 @@ public:
 		 there are 10 bytes socks5 ahead of udp data, so we got (size - 10 + 8)
 
 		 */
+		auto saved_udpl = psd_header->mbz;
 		psd_header->udpl = htons(bytes_read - 10 + 8);
 
 		auto udp_header = (udp_hdr *)((char *)ip_header + 4 * (ip_header->_v_hl & 0x0f));
 
-
-		//set src_port
-		//memcpy(&udp_header->src, &src_port, 2);
+		udp_header->src = lwip_ntohs(src_port);
 
 		// same value
 		udp_header->len = psd_header->udpl;
@@ -256,12 +266,23 @@ public:
 		auto udp_checksum = getChecksum((unsigned short*)psd_header, checksum_len + paddle_len);
 		udp_header->chksum = udp_checksum;
 
+		//restore
+		psd_header->mbz = saved_mbz;
+		psd_header->udpl = saved_udpl;
+
 
 		ip_header->_len = htons(bytes_read - 10 + 4 * (ip_header->_v_hl & 0x0f) + 8);
 		ip_header->_ttl = 64;
 
 		calculateIpCheckSum(ip_header);
-		LOG_DEBUG("injecting {} bytes\n", (ip_header->_v_hl & 0x0f) * 4 + 8 + bytes_read);
+		//LOG_DEBUG("injecting {} bytes\n", (ip_header->_v_hl & 0x0f) * 4 + 8 + bytes_read);
+		
+		//for (int i = 0; i < (ip_header->_v_hl & 0x0f) * 4 + 8 + bytes_read; i++)
+		//{
+		//	printf("%x ", remote_recv_buff_[4 + i]);
+		//}
+		//printf("\n");
+		//
 		TuntapHelper::GetInstance()->Inject(&remote_recv_buff_[4], (ip_header->_v_hl & 0x0f) * 4 + 8 + bytes_read - 10);
 		//tun_descriptor_.async_write_some(boost::asio::buffer(&remote_recv_buff_[4], size + 18), boost::bind(&UdpSession::handlerOnLocalSent, this->shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
 		return true;
@@ -274,7 +295,7 @@ private:
 	UdpSessionMap& session_map_;
 	boost::asio::ip::udp::socket remote_socket_;
 	boost::asio::ip::udp::endpoint recv_ep_;
-
+	
 	unsigned char remote_recv_buff_[UDP_REMOTE_RECV_BUFF_SIZE];
 	std::vector<char> ip_udp_header_;
 	ip_hdr original_ip_header;
@@ -354,24 +375,24 @@ private:
 
 		switch (this->session_status_)
 		{
-		case SESSION_STATUS::RELAYING:
-		{
-			if (isTimeOut())
+			case SESSION_STATUS::RELAYING:
 			{
-				//DLOG(INFO) << DEBUG_STR("session timeout canceling");
-				this->cancelRemote();
+				if (isTimeOut())
+				{
+					//DLOG(INFO) << DEBUG_STR("session timeout canceling");
+					this->cancelRemote();
+					goto NEXT_LOOP;
+				}
+				//DLOG(INFO) << DEBUG_STR("session relaying");
 				goto NEXT_LOOP;
 			}
-			//DLOG(INFO) << DEBUG_STR("session relaying");
-			goto NEXT_LOOP;
-		}
-		case SESSION_STATUS::CLOSED:
-		{
-			//DLOG(INFO) << DEBUG_STR("session CLOSED closing");
-			this->closeRemote();
-			return;
+			case SESSION_STATUS::CLOSED:
+			{
+				//DLOG(INFO) << DEBUG_STR("session CLOSED closing");
+				this->closeRemote();
+				return;
 
-		}
+			}
 
 		}
 

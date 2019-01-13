@@ -46,7 +46,7 @@ private:
 		}
 
 
-		printf("[handlerOnTunInject] inject %zu bytes into tun device!!!\n", size);
+		//printf("[handlerOnTunInject] inject %zu bytes into tun device!!!\n", size);
 
 
     }
@@ -62,8 +62,9 @@ private:
         }
 
 
-        printf("[handlerOnTunInjectWithPbuf] inject %zu bytes into tun device!!!\n", size);
+        //printf("[handlerOnTunInjectWithPbuf] inject %zu bytes into tun device!!!\n", size);
 
+		pbuf_free(p);
 
     }
 
