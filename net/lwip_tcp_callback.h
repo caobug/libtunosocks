@@ -97,5 +97,11 @@ err_t listener_accept_func(void *arg, struct tcp_pcb *newpcb, err_t err) {
 	newpcb->sent = tcp_sent_func;
 	newpcb->errf = tcp_err_func;
     tcp_nagle_disable(newpcb);
+
+	auto res = TcpHandler::GetInstance()->Handle(newpcb, nullptr);
+
+	// new conn must succ
+	assert(res == true);
+
     return ERR_OK;
 }

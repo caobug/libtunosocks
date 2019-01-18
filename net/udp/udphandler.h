@@ -54,6 +54,7 @@ public:
 
 		auto udp_header = reinterpret_cast<udp_hdr *>((char *)ip_header + 4 * (ip_header->_v_hl & 0x0f));
 
+		LOG_DEBUG("read udp len {}", ntohs(udp_header->len));
 		/*
 
 		 The length of UDP_RELAY_PACKET is 10

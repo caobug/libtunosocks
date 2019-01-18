@@ -186,7 +186,7 @@ public:
 			this->session_status_ = SESSION_STATUS::CLOSED;
 			return false;
 		}
-		LOG_INFO("UDP read {} bytes from remote", bytes_read);
+		//LOG_INFO("UDP read {} bytes from remote", bytes_read);
 
 		//inject back to tun device
 		/*for (int i = 0; i < bytes_read; i++)
@@ -206,7 +206,7 @@ public:
 		//return if ip err
 		if (src_ip_uint32 == INADDR_NONE) return true;
 
-		LOG_INFO("[{}] udp remote from ep: {}:{}", (void*)this, src_ip.c_str(), src_port);
+		//LOG_DEBUG("[{}] udp read from ep: {}:{}", (void*)this, src_ip.c_str(), src_port);
 
 		memcpy(&remote_recv_buff_[4], &ip_udp_header_[0], ip_udp_header_.size());
 

@@ -102,6 +102,7 @@ public:
 		//it won't enqueue infinite packet cause it's limited by the recv_wnd
 		EnqueuePacket(p);
 		//assert(this->status != SESSION_CLOSE);
+
 		// if not connected to socks5 server return  
 		if (this->status != SESSION_RELAYING) return;
 
@@ -377,7 +378,7 @@ private:
 			if (ec)
 			{
 				LOG_DEBUG("[{:p}] handleRemoteRead err --> {}", (void*)this, ec.message().c_str())
-					return false;
+				return false;
 			}
 
 

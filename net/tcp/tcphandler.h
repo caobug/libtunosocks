@@ -29,7 +29,8 @@ public:
 		session_map.erase(res);
 	}
 
-
+	//new connection if p is nullptr
+	//return true if packet is handled 
 	bool Handle(tcp_pcb *pcb, pbuf* p)
 	{
 		auto res = session_map.find(*pcb);
@@ -37,11 +38,13 @@ public:
 		// new session
 		if (res == session_map.end())
 		{
+			assert(p == nullptr);
+
 			auto new_session = boost::make_shared<TcpSession>(pcb, session_map, io_context);
 			session_map.insert(std::make_pair(*pcb, new_session));
 			new_session->SetSocks5ServerEndpoint("127.0.0.1", 5555);
 			// socks5 server not connect yet, we have to enqueue the first packet
-			new_session->EnqueuePacket(p);
+			//if (p) new_session->EnqueuePacket(p);
 			new_session->Start();
 			return true;
 		}
