@@ -60,7 +60,7 @@ public:
 		}
 
 		auto self(this->shared_from_this());
-		boost::asio::spawn(this->remote_socket.get_io_context(), [this, self](boost::asio::yield_context yield) {
+		boost::asio::spawn(this->remote_socket.get_executor(), [this, self](boost::asio::yield_context yield) {
 
 			if (!connectToRemote(yield)) { this->status = SESSION_CLOSE; return; }
 			if (!handleMethodSelection(yield)) { this->status = SESSION_CLOSE; return; }
@@ -162,7 +162,7 @@ public:
 		should_read_from_remote = true;
 
 		auto self(this->shared_from_this());
-		boost::asio::spawn(this->remote_socket.get_io_context(), [this, self](boost::asio::yield_context yield) {
+		boost::asio::spawn(this->remote_socket.get_executor(), [this, self](boost::asio::yield_context yield) {
 
 
 			while (true)

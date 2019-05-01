@@ -60,7 +60,7 @@ public:
 		//this->session_timer_.async_wait(boost::bind(&session::handlerOnTimeUp, this->shared_from_this(), boost::asio::placeholders::error));
 
 		auto self(this->shared_from_this());
-		boost::asio::spawn(this->remote_socket_.get_io_context(), [this, self](boost::asio::yield_context yield) {
+		boost::asio::spawn(this->remote_socket_.get_executor(), [this, self](boost::asio::yield_context yield) {
 
 			while (true)
 			{
@@ -283,7 +283,15 @@ public:
 		//}
 		//printf("\n");
 		//
+
+#ifdef _WIN32
 		TuntapHelper::GetInstance()->Inject(&remote_recv_buff_[4], (ip_header->_v_hl & 0x0f) * 4 + 8 + bytes_read - 10);
+#elif defined(__APPLE__)
+		*(uint32_t*)(&remote_recv_buff_[0]) = 33554432;
+		TuntapHelper::GetInstance()->Inject(&remote_recv_buff_[0], (ip_header->_v_hl & 0x0f) * 4 + 8 + bytes_read - 10 + 4);
+#elif defined(__linux__)
+
+#endif
 		//tun_descriptor_.async_write_some(boost::asio::buffer(&remote_recv_buff_[4], size + 18), boost::bind(&UdpSession::handlerOnLocalSent, this->shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
 		return true;
 	}

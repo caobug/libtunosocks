@@ -48,6 +48,8 @@ bool Socksifier::Init()
 
 void Socksifier::AsyncRun()
 {
+	std::cout << "Starting\n";
+
 	TUN_RECV_COROUTINE
 
 	boost::thread t1(boost::bind(&boost::asio::io_context::run, &this->io_context_));

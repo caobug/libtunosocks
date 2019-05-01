@@ -7,7 +7,8 @@
 #include <lwip/pbuf.h>
 #include "../tuntap/tuntaphelper.h"
 
-
+// for tcp output only
+// udp packet will skip this callback
 err_t netif_output_func(struct netif *netif, struct pbuf *p, const ip4_addr_t *ipaddr) {
 
 
