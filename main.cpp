@@ -1,12 +1,12 @@
 #include "net/socksifier.h"
-#include "utils/logger.h"
 #include "tuntap/tuntapinstaller.h"
 
+#include "utils/app/app.h"
 
 int main()
 {
-	Logger::GetInstance()->InitLog();
-    Logger::GetInstance()->SetLevel(spdlog::level::debug);
+
+    App::Init();
 
 	//if(!TuntapInstaller::GetInstance()->Find())
 	//{

@@ -89,7 +89,7 @@ err_t listener_accept_func(void *arg, struct tcp_pcb *newpcb, err_t err) {
 	auto src = std::string(inet_ntoa(*(in_addr*)&newpcb->remote_ip.addr));
 	auto dst = std::string(inet_ntoa(*(in_addr*)&newpcb->local_ip.addr));
 
-	LOG_DEBUG("tcp accepted src: {}:{} --> dst: {}:{}\n", src.c_str(), newpcb->remote_port, dst.c_str(), newpcb->local_port)
+	LOG_DEBUG("tcp accepted src: {}:{} --> dst: {}:{}", src.c_str(), newpcb->remote_port, dst.c_str(), newpcb->local_port)
 
 	//when new connection is accepted, dispatch it to tcphandler
 

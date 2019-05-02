@@ -127,7 +127,7 @@ public:
 	{
 		if (ec)
 		{
-			this->status == SESSION_CLOSE;
+			this->status = SESSION_CLOSE;
 			return;
 		}
 
@@ -175,7 +175,7 @@ public:
 				if (ec)
 				{
 					LOG_DEBUG("[{:p}] handleRemoteRead err --> {}", (void*)this, ec.message().c_str())
-					return false;
+					return;
 				}
 
 				//LOG_DEBUG("read {} bytes data from socks5 server", bytes_read);
@@ -185,7 +185,7 @@ public:
 				// pcb could be closed
 				if (status == SESSION_CLOSE)
 				{
-					return false;
+					return;
 				}
 				tcp_write(original_pcb, remote_recv_buff_, bytes_read, 0);
 
@@ -195,7 +195,7 @@ public:
 				{
 					//LOG_DEBUG("local have {} buf left stopped", tcp_sndbuf(original_pcb));
 					should_read_from_remote = false;
-					break;
+					return;
 				}
 			}
 			
@@ -408,6 +408,8 @@ private:
 				break;
 			}
 		}
+
+		return false;
 
 	}
 
