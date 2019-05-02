@@ -1,5 +1,6 @@
 #include "packethandler.h"
 #include "lwiphelper.h"
+#include "filter/udp_filter.h"
 
 #include <lwip/sockets.h>
 #include <lwip/ip4.h>
@@ -27,7 +28,10 @@ void PacketHandler::Input(void* packet, uint64_t size)
 
 	if (IPH_PROTO(ip_header) == PROTO_UDP)
 	{
-		UdpHandler::GetInstance()->Handle(ip_header);
+		if (UdpFilter::Pass(ip_header->dest.addr))
+		{
+			UdpHandler::GetInstance()->Handle(ip_header);
+		}
 		return;
 	}
 
