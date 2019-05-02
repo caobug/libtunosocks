@@ -12,8 +12,6 @@
 
 #include "socks5server_info.h"
 
-#include "../utils/system_exec.h"
-
 #define TUN_RECV_COROUTINE \
 auto self(GetInstance()); \
 boost::asio::spawn([this, self](boost::asio::yield_context yield) {  boost::system::error_code ec; auto packet_handler = PacketHandler::GetInstance(); \
@@ -43,10 +41,6 @@ bool Socksifier::Init()
 		std::cout << "err assigning native handle to stream descriptor\n";
 		return false;
 	}
-
-	//we change or add default route
-	ExecAndGetRes("route change default -iface utun64");
-	ExecAndGetRes("route add default -iface utun64");
 
 	return true;
 }
