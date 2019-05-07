@@ -1,8 +1,5 @@
 #pragma once
 
-#include <arpa/inet.h>
-
-
 class UdpFilter
 {
 public:
