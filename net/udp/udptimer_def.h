@@ -1,0 +1,7 @@
+#pragma once
+
+const int UDP_SESSION_INNER_TIMELOOP = 10;
+
+const int UDP_SESSION_TIMEOUT_NORMAL = 30;
+
+const int UDP_SESSION_TIMEOUT_DNS = 3;

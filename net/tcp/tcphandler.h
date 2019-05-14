@@ -5,6 +5,7 @@
 #include "tcp_session.h"
 #include <boost/make_shared.hpp>
 #include <boost/thread.hpp>
+#include "../socks5server_info.h"
 
 class TcpHandler : public Singleton<TcpHandler>
 {
@@ -42,7 +43,9 @@ public:
 
 			auto new_session = boost::make_shared<TcpSession>(pcb, session_map, io_context);
 			session_map.insert(std::make_pair(*pcb, new_session));
-			new_session->SetSocks5ServerEndpoint("127.0.0.1", 5555);
+
+			auto socks_info = Socks5ServerInfo::GetInstance();
+			new_session->SetSocks5ServerEndpoint(socks_info->GetIp(), socks_info->GetPort());
 			// socks5 server not connect yet, we have to enqueue the first packet
 			//if (p) new_session->EnqueuePacket(p);
 			new_session->Start();
@@ -52,7 +55,7 @@ public:
 		// old session
 		if (res->second->GetSeesionStatus() == SESSION_CLOSE)
 		{
-			LOG_DEBUG("session closed")
+			//LOG_DEBUG("session closed")
 			pbuf_free(p);
 			return false;
 		}

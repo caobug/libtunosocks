@@ -1,6 +1,7 @@
 #pragma once
-#include <string>
 #include "../utils/singleton.h"
+#include <string>
+
 struct Socks5ServerInfo : public Singleton<Socks5ServerInfo>
 {
 	std::string ip;
@@ -12,9 +13,14 @@ struct Socks5ServerInfo : public Singleton<Socks5ServerInfo>
 		port = port;
 	}
 
-	void Get(std::string ip, uint16_t port)
+	auto& GetIp()
 	{
+		return ip;
+	}
 
+	auto& GetPort()
+	{
+		return port;
 	}
 
 };

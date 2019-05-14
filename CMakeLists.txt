@@ -19,7 +19,8 @@ function(my_add_executable)
     foreach (_source IN ITEMS ${ARGN})
         assign_source_group(${_source})
     endforeach ()
-    add_executable(${ARGV})
+        message(${ARGV})
+    add_library(${ARGV})
 endfunction(my_add_executable)
 
 file(GLOB_RECURSE LWIP_INCLUDE "${CMAKE_CURRENT_SOURCE_DIR}/lwip/include/*.*")
@@ -35,8 +36,10 @@ file(GLOB_RECURSE UTILS "${CMAKE_CURRENT_SOURCE_DIR}/utils/*.*")
 include_directories(lwip/include)
 
 my_add_executable(libtun2socks
-        
-		main.cpp
+        SHARED
+        lib/tunosocks.cpp
+        #lib/tunosocks_wrapper.cpp
+		#main.cpp
 		${LWIP_CORE}
 		${LWIP_NETIF}
 		${LWIP_PLATFORM}
@@ -45,7 +48,7 @@ my_add_executable(libtun2socks
 		${TUNTAP}
 		${UTILS}
 		)
-		
+
 add_definitions(-DBOOST_COROUTINES_NO_DEPRECATION_WARNING)
 add_definitions(-DLWIP_DONT_PROVIDE_BYTEORDER_FUNCTIONS)
 add_definitions(-DSINGLETON_RAW_POINTER)
