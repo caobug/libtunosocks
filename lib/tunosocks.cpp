@@ -12,7 +12,7 @@ extern "C" {
 void tunosocks_setsocks5(const char* ip, unsigned short port)
 {
     Logger::GetInstance()->InitLog();
-    Logger::GetInstance()->SetLevel(spdlog::level::debug);
+    Logger::GetInstance()->SetLevel(spdlog::level::info);
 
     LOG_INFO("set socks5 server: {}:{}", ip, port)
     Socks5ServerInfo::GetInstance()->Set(ip, port);

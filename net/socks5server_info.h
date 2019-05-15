@@ -2,15 +2,14 @@
 #include "../utils/singleton.h"
 #include <string>
 
-struct Socks5ServerInfo : public Singleton<Socks5ServerInfo>
+class Socks5ServerInfo : public Singleton<Socks5ServerInfo>
 {
-	std::string ip;
-	uint16_t port;
 
+public:
 	void Set(std::string ip, uint16_t port)
 	{
-		ip = ip;
-		port = port;
+		this->ip = ip;
+		this->port = port;
 	}
 
 	auto& GetIp()
@@ -22,6 +21,10 @@ struct Socks5ServerInfo : public Singleton<Socks5ServerInfo>
 	{
 		return port;
 	}
+
+private:
+	std::string ip;
+	uint16_t port;
 
 };
 
