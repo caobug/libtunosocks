@@ -1,11 +1,8 @@
-#ifndef AAA_C_CONNECTOR_H
-#define AAA_C_CONNECTOR_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-void AAA_sayHi(const char *name);
 
 void tunosocks_setsocks5(const char* ip, unsigned short port);
 
@@ -17,5 +14,3 @@ void tunosocks_stop();
 }
 #endif
 
-
-#endif

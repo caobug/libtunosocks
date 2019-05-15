@@ -38,7 +38,6 @@ include_directories(lwip/include)
 my_add_executable(libtun2socks
         SHARED
         lib/tunosocks.cpp
-        #lib/tunosocks_wrapper.cpp
 		#main.cpp
 		${LWIP_CORE}
 		${LWIP_NETIF}
