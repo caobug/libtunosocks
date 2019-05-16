@@ -13,21 +13,21 @@ extern "C" {
 
 int tunosocks_install_driver()
 {
+#ifdef _WIN32
 	if(!TuntapInstaller::GetInstance()->Find())
 	{
-		
 		if (!TuntapInstaller::GetInstance()->Install())
 		{
 			return -1;
 		}
-
 	}
-
+#endif
 	return 0;
 }
 
 int tunosocks_uninstall_driver()
 {
+#ifdef _WIN32
 	if (TuntapInstaller::GetInstance()->Find())
 	{
 		if (!TuntapInstaller::GetInstance()->Uninstall())
@@ -35,6 +35,7 @@ int tunosocks_uninstall_driver()
 			return -1;
 		}
 	}
+#endif
 	return 0;
 }
 
@@ -49,15 +50,12 @@ void tunosocks_setsocks5(const char* ip, unsigned short port)
 
 int tunosocks_start()
 {
-
     auto res = Socksifier::GetInstance()->Init();
-
     if (res)
     {
         Socksifier::GetInstance()->AsyncRun();
         return 0;
     }
-
     return -1;
 
 }

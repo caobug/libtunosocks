@@ -19,6 +19,7 @@
 
 #include "udp_session.h"
 #include <boost/thread.hpp>
+#include "../socks5server_info.h"
 
 /*
 
@@ -82,7 +83,10 @@ public:
 		{
 
 			auto new_session = boost::make_shared<UdpSession>(io_context, udp_session_map_);
-			new_session->SetSocks5ServerEndpoint("127.0.0.1", 5555);
+
+			auto socks_info = Socks5ServerInfo::GetInstance();
+
+			new_session->SetSocks5ServerEndpoint(socks_info->GetIp(), socks_info->GetPort());
 
 			udp_session_map_.insert(std::make_pair(*udp_header, new_session));
 
@@ -101,7 +105,7 @@ public:
 		{
 
 			auto session_ptr = boost::static_pointer_cast<UdpSession>(res->second);
-			LOG_INFO("[{}] old udp send to: {}:{}", (void*)session_ptr.get(), ip4addr_ntoa((ip4_addr_t*)&ip_header->dest), lwip_htons(udp_header->dest));
+			//LOG_INFO("[{}] old udp send to: {}:{}", (void*)session_ptr.get(), ip4addr_ntoa((ip4_addr_t*)&ip_header->dest), lwip_htons(udp_header->dest));
 
 			Socks5ProtocolHelper::ConstructSocks5UdpPacketFromIpStringAndPort((unsigned char*)socks5_udp_packet, ip4addr_ntoa((ip4_addr_t*)&ip_header->dest), udp_header->dest);
 
