@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(libtun2socks)
+project(libtunosocks)
 set(CMAKE_CXX_STANDARD 14)
 
 function(assign_source_group)
@@ -35,7 +35,7 @@ file(GLOB_RECURSE UTILS "${CMAKE_CURRENT_SOURCE_DIR}/utils/*.*")
 
 include_directories(lwip/include)
 
-my_add_executable(libtun2socks
+my_add_executable(libtunosocks
         SHARED
         lib/tunosocks.cpp
 		#main.cpp
@@ -55,14 +55,14 @@ add_definitions(-DSINGLETON_RAW_POINTER)
 
 IF (WIN32)
 	
- 
-  add_definitions(-D_WIN32_WINNT=0x0A00)
-  add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-  add_definitions(-DWIN32_LEAN_AND_MEAN)
-  add_definitions(-D_WINSOCK_DEPRECATED_NO_WARNINGS)
+	add_definitions(-DBUILD_DLL)
+	add_definitions(-D_WIN32_WINNT=0x0A00)
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    add_definitions(-DWIN32_LEAN_AND_MEAN)
+    add_definitions(-D_WINSOCK_DEPRECATED_NO_WARNINGS)
 
 ENDIF()
-set_target_properties(libtun2socks PROPERTIES PREFIX "")
+set_target_properties(libtunosocks PROPERTIES PREFIX "")
 
 IF (CMAKE_SYSTEM_NAME MATCHES "Darwin")
 include_directories("/Users/mario/Documents/spdlog-1.2.1/include")
@@ -84,43 +84,43 @@ IF(NOT BUILD_IOS_LIBRARY)
     #
     #    if (Boost_FOUND)
     #        include_directories(${Boost_INCLUDE_DIRS})
-    #        target_link_libraries(libtun2socks ${Boost_LIBRARIES})
+    #        target_link_libraries(libtunosocks ${Boost_LIBRARIES})
     #    endif ()
 
     IF(WIN32)
         include_directories("C:/Boost/include/boost-1_70")
 
-        #target_link_libraries(libtun2socks "C:/Boost/lib/libboost_regex-vc142-mt-x64-1_70.lib")
-        #target_link_libraries(libtun2socks "C:/Boost/lib/libboost_context-vc142-mt-x64-1_70.lib")
-        #target_link_libraries(libtun2socks "C:/Boost/lib/libboost_coroutine-vc142-mt-x64-1_70.lib")
-        #target_link_libraries(libtun2socks "C:/Boost/lib/libboost_context-vc142-mt-x64-1_70.lib")
-        #target_link_libraries(libtun2socks "C:/Boost/lib/libboost_date_time-vc142-mt-x64-1_70.lib")
-        #target_link_libraries(libtun2socks "C:/Boost/lib/libboost_thread-vc142-mt-x64-1_70.lib")
-        #target_link_libraries(libtun2socks "C:/Boost/lib/libboost_chrono-vc142-mt-x64-1_70.lib")
-        #target_link_libraries(libtun2socks "C:/Boost/lib/libboost_filesystem-vc142-mt-gd-x64-1_70.lib")
-        #target_link_libraries(libtun2socks "C:/Boost/lib/libboost_program_options-vc142-mt-gd-x64-1_70.lib")
+        target_link_libraries(libtunosocks "C:/Boost/lib/libboost_regex-vc142-mt-x64-1_70.lib")
+        target_link_libraries(libtunosocks "C:/Boost/lib/libboost_context-vc142-mt-x64-1_70.lib")
+        target_link_libraries(libtunosocks "C:/Boost/lib/libboost_coroutine-vc142-mt-x64-1_70.lib")
+        target_link_libraries(libtunosocks "C:/Boost/lib/libboost_context-vc142-mt-x64-1_70.lib")
+        target_link_libraries(libtunosocks "C:/Boost/lib/libboost_date_time-vc142-mt-x64-1_70.lib")
+        target_link_libraries(libtunosocks "C:/Boost/lib/libboost_thread-vc142-mt-x64-1_70.lib")
+        target_link_libraries(libtunosocks "C:/Boost/lib/libboost_chrono-vc142-mt-x64-1_70.lib")
+        target_link_libraries(libtunosocks "C:/Boost/lib/libboost_filesystem-vc142-mt-x64-1_70.lib")
+        target_link_libraries(libtunosocks "C:/Boost/lib/libboost_program_options-vc142-mt-x64-1_70.lib")
 		
 		
 		
-        target_link_libraries(libtun2socks "C:/Boost/lib/libboost_regex-vc142-mt-gd-x64-1_70.lib")
-        target_link_libraries(libtun2socks "C:/Boost/lib/libboost_context-vc142-mt-gd-x64-1_70.lib")
-        target_link_libraries(libtun2socks "C:/Boost/lib/libboost_coroutine-vc142-mt-gd-x64-1_70.lib")
-        target_link_libraries(libtun2socks "C:/Boost/lib/libboost_context-vc142-mt-gd-x64-1_70.lib")
-        target_link_libraries(libtun2socks "C:/Boost/lib/libboost_date_time-vc142-mt-gd-x64-1_70.lib")
-        target_link_libraries(libtun2socks "C:/Boost/lib/libboost_thread-vc142-mt-gd-x64-1_70.lib")
-        target_link_libraries(libtun2socks "C:/Boost/lib/libboost_chrono-vc142-mt-gd-x64-1_70.lib")
-        target_link_libraries(libtun2socks "C:/Boost/lib/libboost_filesystem-vc142-mt-gd-x64-1_70.lib")
-		target_link_libraries(libtun2socks "C:/Boost/lib/libboost_program_options-vc142-mt-gd-x64-1_70.lib")
+        #target_link_libraries(libtunosocks "C:/Boost/lib/libboost_regex-vc142-mt-gd-x64-1_70.lib")
+        #target_link_libraries(libtunosocks "C:/Boost/lib/libboost_context-vc142-mt-gd-x64-1_70.lib")
+        #target_link_libraries(libtunosocks "C:/Boost/lib/libboost_coroutine-vc142-mt-gd-x64-1_70.lib")
+        #target_link_libraries(libtunosocks "C:/Boost/lib/libboost_context-vc142-mt-gd-x64-1_70.lib")
+        #target_link_libraries(libtunosocks "C:/Boost/lib/libboost_date_time-vc142-mt-gd-x64-1_70.lib")
+        #target_link_libraries(libtunosocks "C:/Boost/lib/libboost_thread-vc142-mt-gd-x64-1_70.lib")
+        #target_link_libraries(libtunosocks "C:/Boost/lib/libboost_chrono-vc142-mt-gd-x64-1_70.lib")
+        #target_link_libraries(libtunosocks "C:/Boost/lib/libboost_filesystem-vc142-mt-gd-x64-1_70.lib")
+		#target_link_libraries(libtunosocks "C:/Boost/lib/libboost_program_options-vc142-mt-gd-x64-1_70.lib")
 
 
     ELSE()
         include_directories("/usr/local/include")
 
-        target_link_libraries(libtun2socks "/usr/local/lib/libboost_thread.a")
-        target_link_libraries(libtun2socks "/usr/local/lib/libboost_regex.a")
-        target_link_libraries(libtun2socks "/usr/local/lib/libboost_coroutine.a")
-        target_link_libraries(libtun2socks "/usr/local/lib/libboost_context.a")
-        target_link_libraries(libtun2socks "/usr/local/lib/libboost_filesystem.a")
-        target_link_libraries(libtun2socks "/usr/local/lib/libboost_program_options.a")
+        target_link_libraries(libtunosocks "/usr/local/lib/libboost_thread.a")
+        target_link_libraries(libtunosocks "/usr/local/lib/libboost_regex.a")
+        target_link_libraries(libtunosocks "/usr/local/lib/libboost_coroutine.a")
+        target_link_libraries(libtunosocks "/usr/local/lib/libboost_context.a")
+        target_link_libraries(libtunosocks "/usr/local/lib/libboost_filesystem.a")
+        target_link_libraries(libtunosocks "/usr/local/lib/libboost_program_options.a")
     ENDIF()
 ENDIF()

@@ -15,7 +15,7 @@ public:
 	TuntapInstaller()
 	{
 		current_path = FileHelper::GetCurrentDir();
-		printf("current_path: %s", current_path.c_str());
+		current_path = "C:\\";
 	}
 
 	bool Find()
@@ -25,7 +25,7 @@ public:
 		std::string tapinstaller_path = current_path + tapinstaller_path_prefix;
 
 		std::string cmd = tapinstaller_path + std::string{ " find " } + std::string{ " tap0901" };
-		
+
 		if (startup(tapinstaller_path, cmd) != 0) return false;
 
 		return true;
@@ -40,10 +40,9 @@ public:
 
 		std::string cmd = tapinstaller_path + std::string{" install "} + tapinstaller_inf_path + std::string{" tap0901"};
 
-
 		if (startup(tapinstaller_path, cmd) != 0) return false;
 
-		return Find();
+		return true;
 	}
 
 	bool Uninstall()
@@ -136,7 +135,7 @@ private:
 			return -1;
 		}
 
-		printf("tapinstall exit code %d\n", exitCode);
+		//printf("tapinstall exit code %d\n", exitCode);
 
 		// Close process and thread handles. 
 		CloseHandle(pi.hProcess);

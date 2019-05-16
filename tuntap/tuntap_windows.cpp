@@ -176,7 +176,7 @@ restart:
 	Sleep(2000);
 
 	auto set_ip_script = std::string("netsh interface ipv4 set address name = ") + R"(")" + std::string(tunAdapterName.begin(), tunAdapterName.end()) + R"(")" +
-		std::string(" source = static addr=10.2.0.2 mask=255.255.255.0 gateway=10.2.0.10 gwmetric=1");
+		std::string(" source = static addr=10.2.0.2 mask=255.255.255.0 gateway=10.2.0.10 gwmetric=666");
 
 	system(set_ip_script.c_str());
 

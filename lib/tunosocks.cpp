@@ -4,10 +4,39 @@
 #include "../utils/logger.h"
 #include "../net/socks5server_info.h"
 #include "../net/socksifier.h"
+#include "../tuntap/tuntapinstaller.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+	
+
+int tunosocks_install_driver()
+{
+	if(!TuntapInstaller::GetInstance()->Find())
+	{
+		
+		if (!TuntapInstaller::GetInstance()->Install())
+		{
+			return -1;
+		}
+
+	}
+
+	return 0;
+}
+
+int tunosocks_uninstall_driver()
+{
+	if (TuntapInstaller::GetInstance()->Find())
+	{
+		if (!TuntapInstaller::GetInstance()->Uninstall())
+		{
+			return -1;
+		}
+	}
+	return 0;
+}
 
 void tunosocks_setsocks5(const char* ip, unsigned short port)
 {
