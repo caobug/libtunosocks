@@ -42,6 +42,8 @@ public:
 
 		if (startup(tapinstaller_path, cmd) != 0) return false;
 
+		changeAdapterName();
+
 		return true;
 	}
 
@@ -144,6 +146,7 @@ private:
 		return exitCode;
 	}
 
+	void changeAdapterName();
 
 };
 #endif

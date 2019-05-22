@@ -6,11 +6,13 @@ int main()
 {
 
     //App::Init();
+	//tunosocks_uninstall_driver();
+	tunosocks_install_driver();
 
     tunosocks_setsocks5("127.0.0.1", 5555);
 
-	tunosocks_uninstall_driver();
-    //tunosocks_start();
+	//tunosocks_uninstall_driver();
+    tunosocks_start();
 
 
 

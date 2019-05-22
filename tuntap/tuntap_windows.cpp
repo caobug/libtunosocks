@@ -178,7 +178,14 @@ restart:
 	auto set_ip_script = std::string("netsh interface ipv4 set address name = ") + R"(")" + std::string(tunAdapterName.begin(), tunAdapterName.end()) + R"(")" +
 		std::string(" source = static addr=10.2.0.2 mask=255.255.255.0 gateway=10.2.0.10 gwmetric=666");
 
+	auto set_dns_script = std::string("netsh interface ip add dns ") + R"(")" + std::string(tunAdapterName.begin(), tunAdapterName.end()) + R"(")" +
+		std::string(" 8.8.8.8 index=1");
+	auto set_dns_script2 = std::string("netsh interface ip add dns ") + R"(")" + std::string(tunAdapterName.begin(), tunAdapterName.end()) + R"(")" +
+		std::string(" 8.8.4.4 index=2");
+
 	system(set_ip_script.c_str());
+	system(set_dns_script.c_str());
+	system(set_dns_script2.c_str());
 
 	return true;
 }
