@@ -48,3 +48,8 @@ bool LwipHelper::Init()
 
     return true;
 }
+
+netif& LwipHelper::GetNetIf()
+{
+    return tun64;
+}

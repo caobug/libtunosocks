@@ -10,13 +10,10 @@ public:
 
     bool Init();
 
-
-    netif& GetNetIf()
-    {
-        return tun64;
-    }
+    netif& GetNetIf();
 
 private:
+
     struct netif tun64;
     struct ip4_addr ipaddr, netmask, gw;
     struct tcp_pcb *acceptor;
