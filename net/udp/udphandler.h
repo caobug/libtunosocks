@@ -92,7 +92,8 @@ public:
 
 			new_session->SetNatInfo(ip_header);
 			// generate standard udp socks5 header
-			LOG_INFO("[{}] new udp send to: {}:{}", (void*)new_session.get(), ip4addr_ntoa((ip4_addr_t*)&ip_header->dest), lwip_htons(udp_header->dest));
+			//LOG_INFO("[{}] new udp send to: {}:{}", (void*)new_session.get(), ip4addr_ntoa((ip4_addr_t*)&ip_header->dest), lwip_htons(udp_header->dest));
+            LOG_INFO("[udp proxy]: {}:{}", ip4addr_ntoa((ip4_addr_t*)&ip_header->dest), lwip_htons(udp_header->dest))
 
 			Socks5ProtocolHelper::ConstructSocks5UdpPacketFromIpStringAndPort((unsigned char*)socks5_udp_packet, ip4addr_ntoa((ip4_addr_t*)&ip_header->dest), udp_header->dest);
 
