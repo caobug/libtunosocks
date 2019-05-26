@@ -106,20 +106,49 @@ public:
 		// if not connected to socks5 server return  
 		if (this->status != SESSION_RELAYING) return;
 
-		while (!pbuf_queue.empty())
-		{
-			boost::system::error_code ec;
+		if (this->remote_sending) return;
 
-			auto front = pbuf_queue.front();
-			pbuf_queue.pop();
+		this->remote_sending = true;
+		auto self(this->shared_from_this());
+		boost::asio::spawn(this->remote_socket.get_executor(), [self, this](boost::asio::yield_context yield){
 
-			async_write(this->remote_socket, boost::asio::buffer(front->payload, front->tot_len),
-				boost::bind(&TcpSession::handlerOnRemoteSend,
-					shared_from_this(),
-					boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred, front));
+            while (!pbuf_queue.empty())
+            {
+                boost::system::error_code ec;
 
+                auto front = pbuf_queue.front();
+                auto front_for_free = pbuf_queue.front();
+                pbuf_queue.pop();
 
-		}
+                while(front)
+                {
+                    boost::system::error_code ec;
+
+                    auto bytes_send = async_write(this->remote_socket, boost::asio::buffer(front->payload, front->len), yield[ec]);
+
+                    if (ec)
+                    {
+                        this->status = SESSION_CLOSE;
+                        return;
+                    }
+
+                    if (status == SESSION_CLOSE)
+                    {
+                        return;
+                    }
+
+                    tcp_recved(original_pcb, bytes_send);
+                    //LOG_DEBUG("send {} bytes to socks5 server", size)
+
+                    front = front->next;
+                }
+
+                pbuf_free(front_for_free);
+
+            }
+            this->remote_sending = false;
+
+		});
 
 	}
 
@@ -220,6 +249,8 @@ private:
 	unsigned char remote_recv_buff_[TCP_REMOTE_RECV_BUFF_SIZE];
 
 	bool should_read_from_remote = true;
+
+	bool remote_sending = false;
 
 	bool openRemoteSocket()
 	{
@@ -329,7 +360,10 @@ private:
 
 		//check reply 0x05 0x00 0x00 0x01 // little endian
 		if (*(int*)remote_recv_buff_ != 16777221) return false;
-		return true;
+
+        LOG_INFO("[tcp proxy]: {}:{}", inet_ntoa(dst), original_pcb->local_port)
+
+        return true;
 	}
 
 	

@@ -9,12 +9,12 @@ int main()
 	//tunosocks_uninstall_driver();
 	tunosocks_install_driver();
 
-    tunosocks_setsocks5("127.0.0.1", 5555);
+    tunosocks_setsocks5("127.0.0.1", 1080);
 
 	//tunosocks_uninstall_driver();
     tunosocks_start();
 
-
+    getchar();
 
 //    auto res = Socksifier::GetInstance()->Init();
 //
