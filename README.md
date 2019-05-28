@@ -1,10 +1,9 @@
 # libtunOsocks
 
 
-libtunOsocks is a library for converting network packets from Layer 3 to 4 (OSI model), it exchanges packets between ip and socks5<sup>1</sup>
+libtunOsocks is a library for converting network packets from Layer 3 to 4 (OSI model), it exchanges packets between ip and socks5
 , you can build transparent proxy tool across platforms easily.
 
-1. you need [socks2c](https://code.dllexport.com/mario/socks2c-go) for udp proxy
 
 
 ## Compiling ##
