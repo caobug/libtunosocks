@@ -22,10 +22,10 @@ Compilation:
 mkdir build
 cd build
 
-# Configure the projectconfiguration flags
+# Configure the project
 cmake ../
 
-# Compile!
+# Compile
 make -j 8
 ```
 
