@@ -1,7 +1,7 @@
 ﻿################################################################################
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
-
+/.vscode/cquery_cached_index
 /.vs
 /CMakeSettings.json
 /build
