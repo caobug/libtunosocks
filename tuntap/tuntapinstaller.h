@@ -15,7 +15,6 @@ public:
 	TuntapInstaller()
 	{
 		current_path = FileHelper::GetCurrentDir();
-		current_path = "C:\\";
 	}
 
 	bool Find()
@@ -55,7 +54,7 @@ public:
 		std::string tapinstaller_inf_path = current_path + inf_path_prefix;
 
 		std::string cmd = tapinstaller_path + std::string{ " remove " } +std::string{ " tap0901" };
-
+		printf("tuntap path: %s\n", cmd.c_str());
 		if (startup(tapinstaller_path, cmd) != 0) return false;
 
 		return true;
